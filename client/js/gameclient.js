@@ -48,7 +48,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
             var url = "ws://"+ this.host +":"+ this.port +"/",
                 self = this;
             
-            log.info("Trying to connect to server : "+url);
+            console.log("Trying to connect to server : "+url);
 
             if(window.MozWebSocket) {
                 this.connection = new MozWebSocket(url);
@@ -70,7 +70,7 @@ define(['player', 'entityfactory', 'lib/bison'], function(Player, EntityFactory,
                 };
             } else {
                 this.connection.onopen = function(e) {
-                    log.info("Connected to server "+self.host+":"+self.port);
+                    console.log("Connected to server "+self.host+":"+self.port);
                 };
 
                 this.connection.onmessage = function(e) {

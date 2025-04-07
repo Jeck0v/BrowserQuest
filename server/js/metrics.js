@@ -13,7 +13,7 @@ module.exports = Metrics = Class.extend({
         this.isReady = false;
         
         this.client.on('connect', function() {
-            log.info("Metrics enabled: memcached client connected to "+config.memcached_host+":"+config.memcached_port);
+            console.log("Metrics enabled: memcached client connected to "+config.memcached_host+":"+config.memcached_port);
             self.isReady = true;
             if(self.ready_callback) {
                 self.ready_callback();
