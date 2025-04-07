@@ -30,7 +30,7 @@ define(['jquery', 'area'], function($, Area) {
         	    filepath = "maps/world_client.json";
         	
         	if(useWorker) {
-        	    log.info("Loading map with web worker.");
+        	    console.log("Loading map with web worker.");
                 var worker = new Worker('js/mapworker.js');
                 worker.postMessage(1);
             
@@ -43,7 +43,7 @@ define(['jquery', 'area'], function($, Area) {
                     self._checkReady();
                 };
             } else {
-                log.info("Loading map via Ajax.");
+                console.log("Loading map via Ajax.");
                 $.get(filepath, function (data) {
                     self._initMap(data);
                     self._generateCollisionGrid();
@@ -128,13 +128,13 @@ define(['jquery', 'area'], function($, Area) {
     	
         	tileset.src = filepath;
     
-            log.info("Loading tileset: "+filepath);
+            console.log("Loading tileset: "+filepath);
     
         	tileset.onload = function() {
                 if(tileset.width % self.tilesize > 0) {
                     throw Error("Tileset size should be a multiple of "+ self.tilesize);
                 }
-                log.info("Map tileset loaded.");
+                console.log("Map tileset loaded.");
             
                 self.tilesetCount -= 1;
                 if(self.tilesetCount === 0) {
@@ -211,7 +211,7 @@ define(['jquery', 'area'], function($, Area) {
                     self.grid[pos.y][pos.x] = 1;
                 }
             });
-            log.info("Collision grid generated.");
+            console.log("Collision grid generated.");
         },
 
         _generatePlateauGrid: function() {
@@ -229,7 +229,7 @@ define(['jquery', 'area'], function($, Area) {
                     tileIndex += 1;
                 }
             }
-            log.info("Plateau grid generated.");
+            console.log("Plateau grid generated.");
         },
     
         /**

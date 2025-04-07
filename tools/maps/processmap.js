@@ -41,7 +41,7 @@ module.exports = function processMap(json, options) {
         map.staticEntities = {};
     }
     
-    log.info("Processing map info...");
+    console.log("Processing map info...");
     map.width = Tiled.width;
     map.height = Tiled.height;
     map.tilesize = Tiled.tilewidth;
@@ -75,7 +75,7 @@ module.exports = function processMap(json, options) {
     if(Tiled.tileset instanceof Array) {
         _.each(Tiled.tileset, function(tileset) {
             if(tileset.name === "tilesheet") {
-                log.info("Processing terrain properties...");
+                console.log("Processing terrain properties...");
                 tileProperties = tileset.tile;
                 for(var i=0; i < tileProperties.length; i += 1) {
                     var property = tileProperties[i].properties.property;
@@ -90,7 +90,7 @@ module.exports = function processMap(json, options) {
                 }
             }
             else if(tileset.name === "Mobs" && mode === "server") {
-                log.info("Processing static entity properties...");
+                console.log("Processing static entity properties...");
                 mobsFirstgid = tileset.firstgid;
                 _.each(tileset.tile, function(p) {
                     var property = p.properties.property,
@@ -111,7 +111,7 @@ module.exports = function processMap(json, options) {
         var group = Tiled.objectgroup[i];
         if(group.name === 'doors') {
             var doors = group.object;
-            log.info("Processing doors...");
+            console.log("Processing doors...");
             for(var j=0; j < doors.length; j += 1) {
                 map.doors[j] = {
                     x: doors[j].x / map.tilesize,
@@ -129,7 +129,7 @@ module.exports = function processMap(json, options) {
     // Object layers
     _.each(Tiled.objectgroup, function(objectlayer) {
         if(objectlayer.name === "roaming" && mode === "server") {
-            log.info("Processing roaming areas...");
+            console.log("Processing roaming areas...");
             var areas = objectlayer.object;
     
             for(var i=0; i < areas.length; i += 1) {
@@ -148,7 +148,7 @@ module.exports = function processMap(json, options) {
             }
         }
         else if(objectlayer.name === "chestareas" && mode === "server") {
-            log.info("Processing chest areas...");
+            console.log("Processing chest areas...");
             _.each(objectlayer.object, function(area) {
                 var chestArea = {
                     x: area.x / map.tilesize,
@@ -169,7 +169,7 @@ module.exports = function processMap(json, options) {
             });
         }
         else if(objectlayer.name === "chests" && mode === "server") {
-            log.info("Processing static chests...");
+            console.log("Processing static chests...");
             _.each(objectlayer.object, function(chest) {
                 var items = chest.properties.property.value;
                 var newChest = {
@@ -183,7 +183,7 @@ module.exports = function processMap(json, options) {
             });
         }
         else if(objectlayer.name === "music" && mode === "client") {
-            log.info("Processing music areas...");
+            console.log("Processing music areas...");
             _.each(objectlayer.object, function(music) {
                 var musicArea = {
                     x: music.x / map.tilesize,
@@ -196,7 +196,7 @@ module.exports = function processMap(json, options) {
             });
         }
         else if(objectlayer.name === "checkpoints") {
-            log.info("Processing check points...");
+            console.log("Processing check points...");
             var count = 0;
             _.each(objectlayer.object, function(checkpoint) {
                 var cp = {
@@ -239,7 +239,7 @@ var processLayer = function processLayer(layer) {
     if(mode === "server") {
         // Mobs
         if(layer.name === "entities") {
-            log.info("Processing positions of static entities ...");
+            console.log("Processing positions of static entities ...");
             var tiles = layer.data.tile;
             
             for(var j=0; j < tiles.length; j += 1) {
@@ -254,7 +254,7 @@ var processLayer = function processLayer(layer) {
     var tiles = layer.data.tile;
     
     if(mode === "client" && layer.name === "blocking") {
-        log.info("Processing blocking tiles...");
+        console.log("Processing blocking tiles...");
         for(var i=0; i < tiles.length; i += 1) {
             var gid = tiles[i].gid;
             
@@ -264,7 +264,7 @@ var processLayer = function processLayer(layer) {
         }
     }
     else if(mode === "client" && layer.name === "plateau") {
-        log.info("Processing plateau tiles...");
+        console.log("Processing plateau tiles...");
         for(var i=0; i < tiles.length; i += 1) {
             var gid = tiles[i].gid;
             
@@ -274,7 +274,7 @@ var processLayer = function processLayer(layer) {
         }
     }
     else if(layer.visible !== 0 && layer.name !== "entities") {
-        log.info("Processing layer: "+ layer.name);
+        console.log("Processing layer: "+ layer.name);
         
         for(var j=0; j < tiles.length; j += 1) {
             var gid = tiles[j].gid;

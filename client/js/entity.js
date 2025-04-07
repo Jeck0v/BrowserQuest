@@ -128,7 +128,7 @@ define(function() {
     	},
 	
         log_info: function(message) {
-            log.info("["+this.id+"] " + message);
+            console.log("["+this.id+"] " + message);
         },
     
         log_error: function(message) {
