@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-import commands
+#!/usr/bin/env python3
+import subprocess
 import sys
 
 SRC_FILE = 'tmx/map.tmx'
@@ -13,13 +13,13 @@ else:
     DEST_FILE = '../../server/maps/world_server.json'
 
 # Convert the Tiled TMX file to a temporary JSON file
-print commands.getoutput('./tmx2json.py '+SRC_FILE+' '+TEMP_FILE)
+print(subprocess.getoutput('./tmx2json.py '+SRC_FILE+' '+TEMP_FILE))
 
 # Map exporting
-print commands.getoutput('./exportmap.js '+TEMP_FILE+' '+DEST_FILE+' '+mode)
+print(subprocess.getoutput('./exportmap.js '+TEMP_FILE+' '+DEST_FILE+' '+mode))
 
 # Remove temporary JSON file
-print commands.getoutput('rm '+TEMP_FILE)
+print(subprocess.getoutput('rm '+TEMP_FILE))
 
 # Send a Growl notification when the export process is complete
-print commands.getoutput('growlnotify --appIcon Tiled -name "Map export complete" -m "'+DEST_FILE+' was saved"')
+print(subprocess.getoutput('growlnotify --appIcon Tiled -name "Map export complete" -m "'+DEST_FILE+' was saved"'))

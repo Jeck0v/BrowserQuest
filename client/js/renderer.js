@@ -834,6 +834,15 @@ define(["camera", "item", "character", "player", "timer"], function (
       // Clear canvases first
       this.clearScreen(this.background);
       this.clearScreen(this.foreground);
+      this.clearScreen(this.context);
+
+      // Make sure any existing camera view is reset
+      this.camera.setPosition(0, 0);
+
+      if (this.game.player) {
+        // Make sure camera is properly positioned on player
+        this.camera.focusEntity(this.game.player);
+      }
 
       // Draw terrain on background canvas
       this.background.save();
@@ -849,7 +858,20 @@ define(["camera", "item", "character", "player", "timer"], function (
         this.foreground.restore();
       }
 
+      // Draw high tiles on the main canvas as well
+      this.context.save();
+      this.setCameraView(this.context);
+      this.drawHighTiles(this.context);
+      if (this.game.player) {
+        // Ensure player is drawn
+        this.game.player.setDirty();
+      }
+      this.context.restore();
+
       console.log("Static canvases (terrain, background) have been rendered");
+
+      // Force a frame render to show changes immediately
+      this.renderFrame();
     },
 
     renderFrame: function () {

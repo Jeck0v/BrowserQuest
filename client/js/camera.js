@@ -88,16 +88,28 @@ define(function () {
 
       console.log("Focusing camera on entity at", entity.gridX, entity.gridY);
 
-      // Direct approach - center camera on entity
-      this.lookAt(entity);
+      // Completely reset camera position
+      this.setPosition(0, 0);
 
-      // Original grid-based approach as fallback
-      var w = this.gridW - 2,
-        h = this.gridH - 2,
-        x = Math.floor((entity.gridX - 1) / w) * w,
-        y = Math.floor((entity.gridY - 1) / h) * h;
+      // First, use the direct approach to center the camera on the entity
+      var r = this.renderer,
+        tileSize = r.tilesize,
+        halfScreenWidth = Math.floor(this.gridW / 2) * tileSize,
+        halfScreenHeight = Math.floor(this.gridH / 2) * tileSize,
+        x = Math.round(entity.x - halfScreenWidth),
+        y = Math.round(entity.y - halfScreenHeight);
 
-      this.setGridPosition(x, y);
+      // Ensure we're not positioning the camera out of bounds
+      x = Math.max(
+        0,
+        Math.min(x, r.game.map.width * tileSize - this.gridW * tileSize)
+      );
+      y = Math.max(
+        0,
+        Math.min(y, r.game.map.height * tileSize - this.gridH * tileSize)
+      );
+
+      this.setPosition(x, y);
 
       console.log(
         "Camera position after focus:",

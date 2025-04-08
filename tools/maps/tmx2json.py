@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 from lxml import etree
 import json
@@ -41,4 +41,4 @@ dest.write(json.dumps(res))
 tmx.close()
 dest.close()
 
-print "Finished converting TMX to JSON."
+print("Finished converting TMX to JSON.")

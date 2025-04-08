@@ -907,6 +907,9 @@ define([
         // Always accept name received from the server which will
         // sanitize and shorten names exceeding the allowed length.
         self.player.name = name;
+
+        // Explicitly set player position with logging
+        console.log("Setting initial player position to:", x, y);
         self.player.setGridPosition(x, y);
         self.player.setMaxHitPoints(hp);
 
@@ -915,9 +918,28 @@ define([
         // Add the player to the game entities first
         self.addEntity(self.player);
 
-        // Force the map to render completely from scratch
+        // Reset game view
+        self.initEntityGrid();
+        self.initPathingGrid();
+        self.initRenderingGrid();
+
+        // Force immediate render with a brief delay to let the DOM update
         setTimeout(function () {
+          // Force reloading map display from scratch
+          self.renderer.clearScreen(self.renderer.context);
+          self.renderer.clearScreen(self.renderer.background);
+          self.renderer.clearScreen(self.renderer.foreground);
+
+          // Ensure camera is correctly positioned
+          self.camera.focusEntity(self.player);
+
+          // Render everything
           self.forceMapRender();
+
+          // Ensure player is visible
+          self.forEachVisibleEntityByDepth(function (entity) {
+            entity.setDirty();
+          });
         }, 100);
 
         self.updatePlateauMode();
@@ -2290,9 +2312,15 @@ define([
       this.renderer.clearScreen(this.renderer.background);
       this.renderer.clearScreen(this.renderer.foreground);
 
-      // Reposition the camera directly on the player
+      // Ensure player is already added to the entity list
+      if (!this.entities[this.player.id] && this.player) {
+        this.addEntity(this.player);
+      }
+
+      // Reposition the camera directly on the player with proper bounds checking
       if (this.player) {
-        this.camera.lookAt(this.player);
+        console.log("Player position:", this.player.gridX, this.player.gridY);
+        this.camera.focusEntity(this.player);
       }
 
       // Force redraw of the entire map
@@ -2300,6 +2328,12 @@ define([
       this.renderer.setCameraView(this.renderer.background);
       this.renderer.drawTerrain();
       this.renderer.background.restore();
+
+      // Also draw high tiles if applicable
+      this.renderer.context.save();
+      this.renderer.setCameraView(this.renderer.context);
+      this.renderer.drawHighTiles(this.renderer.context);
+      this.renderer.context.restore();
 
       // Force redraw of all entities
       this.forEachEntity(function (entity) {

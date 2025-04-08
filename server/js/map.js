@@ -219,11 +219,17 @@ module.exports = Map = cls.Class.extend({
   },
 
   getRandomStartingPosition: function () {
+    // Village coordinates - Hardcoded safe position
+    return { x: 224, y: 3600 }; // Updated coordinates based on checkpoint definitions
+
+    // Original code (commented out)
+    /*
     var nbAreas = _.size(this.startingAreas);
     i = Utils.randomInt(0, nbAreas - 1);
     area = this.startingAreas[i];
 
     return area.getRandomPosition();
+    */
   },
 });
 

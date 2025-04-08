@@ -55,15 +55,13 @@ function main() {
 function getTiledJSONmap(filename, callback) {
   var self = this;
 
-  path.exists(filename, function (exists) {
-    if (!exists) {
-      console.error(filename + " doesn't exist.");
-      return;
-    }
+  if (!fs.existsSync(filename)) {
+    console.error(filename + " doesn't exist.");
+    return;
+  }
 
-    fs.readFile(source, function (err, file) {
-      callback(JSON.parse(file.toString()));
-    });
+  fs.readFile(source, function (err, file) {
+    callback(JSON.parse(file.toString()));
   });
 }
 
