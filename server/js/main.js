@@ -2,9 +2,9 @@ var fs = require("fs"),
   Metrics = require("./metrics");
 
 function main(config) {
+  var Player = require("./player");
   var ws = require("./ws"),
     WorldServer = require("./worldserver"),
-    Log = require("log"),
     _ = require("underscore"),
     server = new ws.WebSocketServer(config.port),
     metrics = config.metrics_enabled ? new Metrics(config) : null;
@@ -23,20 +23,9 @@ function main(config) {
       }
     }, 1000));
 
-  switch (config.debug_level) {
-    case "error":
-      log = new Log(console.error);
-      break;
-    case "debug":
-      log = new Log(console.debug);
-      break;
-    case "info":
-      log = new Log(console.log);
-      break;
-  }
 
   console.log("Starting BrowserQuest game server...");
-
+  
   server.onConnect(function (connection) {
     var world, // the one in which the player will be spawned
       connect = function () {
@@ -45,21 +34,24 @@ function main(config) {
         }
       };
 
-    if (metrics) {
-      metrics.getOpenWorldCount(function (open_world_count) {
-        // choose the least populated world among open worlds
-        world = _.min(_.first(worlds, open_world_count), function (w) {
-          return w.playerCount;
+      if (metrics) {
+        metrics.getOpenWorldCount(function (open_world_count) {
+          // choose the least populated world among open worlds
+          world = _.min(_.first(worlds, open_world_count), function (w) {
+            return w.playerCount;
+          });
+          connect();
         });
+      } else {
+        // simply fill each world sequentially until they are full
+        world = _.detect(worlds, function (world) {
+          
+          return world.playerCount < config.nb_players_per_world;
+        });
+        console.log("asdasdasd")
+
+        world.updatePopulation();
         connect();
-      });
-    } else {
-      // simply fill each world sequentially until they are full
-      world = _.detect(worlds, function (world) {
-        return world.playerCount < config.nb_players_per_world;
-      });
-      world.updatePopulation();
-      connect();
     }
   });
 

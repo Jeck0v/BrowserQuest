@@ -10,7 +10,7 @@ define(['character', 'exceptions'], function(Character, Exceptions) {
             this.name = name;
         
             // Renderer
-     		this.nameOffsetY = -10;
+            this.nameOffsetY = -10;
         
             // sprites
             this.spriteName = "clotharmor";

@@ -332,6 +332,8 @@ define(["player", "entityfactory", "lib/bison"], function (
     receivePopulation: function (data) {
       var worldPlayers = data[1],
         totalPlayers = data[2];
+      
+      console.log("asdasdasd")
 
       if (this.population_callback) {
         this.population_callback(worldPlayers, totalPlayers);
