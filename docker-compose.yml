@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: browserquest-backend
+    ports:
+      - "8000:8000"
+    networks:
+      - browserquest-netw
+    volumes:
+      - ../shared:/app/shared
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: client/Dockerfile
+    container_name: browserquest-frontend
+    ports:
+      - "8080:80"
+    networks:
+      - browserquest-netw
+    restart: unless-stopped
+
+networks:
+  browserquest-netw:
+    driver: bridge
