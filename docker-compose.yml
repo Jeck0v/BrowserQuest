@@ -9,7 +9,7 @@ services:
     networks:
       - browserquest-netw
     volumes:
-      - ../shared:/app/shared
+      - ./shared:/app/shared
     restart: unless-stopped
 
   frontend:

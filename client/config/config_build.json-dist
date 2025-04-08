@@ -1,4 +1,4 @@
 {
-    "host": "Set production websocket host here",
+    "host": "backend",
     "port": 8000
 }
