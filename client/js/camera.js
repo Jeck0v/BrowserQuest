@@ -81,12 +81,32 @@ define(function () {
     },
 
     focusEntity: function (entity) {
+      if (!entity) {
+        console.error("Cannot focus on null entity");
+        return;
+      }
+
+      console.log("Focusing camera on entity at", entity.gridX, entity.gridY);
+
+      // Direct approach - center camera on entity
+      this.lookAt(entity);
+
+      // Original grid-based approach as fallback
       var w = this.gridW - 2,
         h = this.gridH - 2,
         x = Math.floor((entity.gridX - 1) / w) * w,
         y = Math.floor((entity.gridY - 1) / h) * h;
 
       this.setGridPosition(x, y);
+
+      console.log(
+        "Camera position after focus:",
+        this.x,
+        this.y,
+        "grid:",
+        this.gridX,
+        this.gridY
+      );
     },
   });
 
