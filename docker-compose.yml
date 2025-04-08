@@ -4,8 +4,8 @@ services:
       context: .
       dockerfile: server/Dockerfile
     container_name: browserquest-backend
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - browserquest-netw
     volumes:
@@ -17,8 +17,20 @@ services:
       context: .
       dockerfile: client/Dockerfile
     container_name: browserquest-frontend
+    networks:
+      - browserquest-netw
+    restart: on-failure
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: browserquest-nginx
     ports:
       - "8080:80"
+    depends_on:
+      - frontend
+      - backend
     networks:
       - browserquest-netw
     restart: unless-stopped
