@@ -46,8 +46,9 @@ define(["player", "entityfactory", "lib/bison"], function (
       this.isListening = false;
     },
 
+    //websocket ????
     connect: function (dispatcherMode) {
-      var url = "ws://" + this.host + ":" + this.port + "/",
+      var url = "ws://" + this.host + ":" + this.port + "/ws/",
         self = this;
 
       console.log("Trying to connect to server : " + url);
