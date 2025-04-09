@@ -831,18 +831,25 @@ define(["camera", "item", "character", "player", "timer"], function (
     },
 
     renderStaticCanvases: function () {
+      // Clear canvases first
+      this.clearScreen(this.background);
+      this.clearScreen(this.foreground);
+
+      // Draw terrain on background canvas
       this.background.save();
       this.setCameraView(this.background);
       this.drawTerrain();
       this.background.restore();
 
+      // Draw high tiles on foreground canvas if on mobile/tablet
       if (this.mobile || this.tablet) {
-        this.clearScreen(this.foreground);
         this.foreground.save();
         this.setCameraView(this.foreground);
         this.drawHighTiles(this.foreground);
         this.foreground.restore();
       }
+
+      console.log("Static canvases (terrain, background) have been rendered");
     },
 
     renderFrame: function () {
