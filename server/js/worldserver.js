@@ -4,7 +4,7 @@ var cls = require("./lib/class"),
   Entity = require("./entity"),
   Character = require("./character"),
   Mob = require("./mob"),
-  Map = require("./map"),
+  TheMap = require("./themap"),
   Npc = require("./npc"),
   Player = require("./player"),
   Item = require("./item"),
@@ -59,14 +59,17 @@ module.exports = World = cls.Class.extend({
     });
 
     this.onPlayerEnter(function (player) {
-      console.log(player.name + " has joined " + self.id);
+      console.info(player.name + " has joined " + self.id);
 
       if (!player.hasEnteredGame) {
         self.incrementPlayerCount();
       }
 
       // Number of players in this world
-      self.pushToPlayer(player, new Messages.Population(self.playerCount));
+      // and in the overall server world
+      //self.pushToPlayer(player, new Messages.Population(self.playerCount, self.server.connectionsCount()));
+      self.updatePopulation();
+
       self.pushRelevantEntityListTo(player);
 
       var move_callback = function (x, y) {
@@ -112,7 +115,7 @@ module.exports = World = cls.Class.extend({
       });
 
       player.onExit(function () {
-        console.log(player.name + " has left the game.");
+        console.info(player.name + " has left the game.");
         self.removePlayer(player);
         self.decrementPlayerCount();
 
@@ -151,7 +154,9 @@ module.exports = World = cls.Class.extend({
   run: function (mapFilePath) {
     var self = this;
 
-    this.map = new Map(mapFilePath);
+    console.log("Map filepath:", mapFilePath);
+
+    this.map = new TheMap(mapFilePath);
 
     this.map.ready(function () {
       self.initZoneGroups();
@@ -224,7 +229,7 @@ module.exports = World = cls.Class.extend({
       }
     }, 1000 / this.ups);
 
-    console.log(
+    console.info(
       "" + this.id + " created (capacity: " + this.maxPlayers + " players)."
     );
   },
@@ -382,7 +387,7 @@ module.exports = World = cls.Class.extend({
     this.players[player.id] = player;
     this.outgoingQueues[player.id] = [];
 
-    //console.log("Added player : " + player.id);
+    //console.info("Added player : " + player.id);
   },
 
   removePlayer: function (player) {
@@ -896,11 +901,11 @@ module.exports = World = cls.Class.extend({
   },
 
   updatePopulation: function (totalPlayers) {
-    this.pushBroadcast(
-      new Messages.Population(
-        this.playerCount,
-        totalPlayers ? totalPlayers : this.playerCount
-      )
+    totalPlayers = totalPlayers ? totalPlayers : this.server.connectionsCount();
+
+    console.info(
+      "Updating population: " + this.playerCount + " " + totalPlayers
     );
+    this.pushBroadcast(new Messages.Population(this.playerCount, totalPlayers));
   },
 });

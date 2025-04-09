@@ -47,56 +47,67 @@ define(["player", "entityfactory", "lib/bison"], function (
     },
 
     connect: function (dispatcherMode) {
-      var url = "ws://" + this.host + ":" + this.port + "/",
+      var url = "http://" + this.host + ":" + this.port,
         self = this;
 
-      console.log("Trying to connect to server : " + url);
+      this.connection = io(url, {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        forceNew: true,
+      });
 
-      if (window.MozWebSocket) {
-        this.connection = new MozWebSocket(url);
-      } else {
-        this.connection = new WebSocket(url);
-      }
+      this.connection.on("connect", function () {
+        console.info("Connected to server " + url);
+      });
 
+      this.connection.on("connect_error", function (error) {
+        console.error("Connection error:", error);
+      });
+
+      /******
+                Dispatcher is a system where you could have another server you connect to first
+                which then provides an IP and port for the client to connect to the game server
+             ******/
       if (dispatcherMode) {
-        this.connection.onmessage = function (e) {
-          var reply = JSON.parse(e.data);
+        this.connection.emit("dispatch", true);
 
+        this.connection.on("dispatched", function (reply) {
+          console.log("Dispatched: ");
+          console.log(reply);
           if (reply.status === "OK") {
             self.dispatched_callback(reply.host, reply.port);
           } else if (reply.status === "FULL") {
-            alert(
+            console.log(
               "BrowserQuest is currently at maximum player population. Please retry later."
             );
           } else {
-            alert("Unknown error while connecting to BrowserQuest.");
+            console.log("Unknown error while connecting to BrowserQuest.");
           }
-        };
+        });
       } else {
-        this.connection.onopen = function (e) {
-          console.log("Connected to server " + self.host + ":" + self.port);
-        };
-
-        this.connection.onmessage = function (e) {
-          if (e.data === "go") {
+        this.connection.on("message", function (data) {
+          if (data === "go") {
             if (self.connected_callback) {
               self.connected_callback();
             }
             return;
           }
-          if (e.data === "timeout") {
+          if (data === "timeout") {
             self.isTimeout = true;
             return;
           }
 
-          self.receiveMessage(e.data);
-        };
+          self.receiveMessage(data);
+        });
 
-        this.connection.onerror = function (e) {
-          console.error(e, true);
-        };
+        /*this.connection.onerror = function(e) {
+                    console.error(e, true);
+                };*/
 
-        this.connection.onclose = function () {
+        this.connection.on("disconnect", function () {
           console.debug("Connection closed");
           $("#container").addClass("error");
 
@@ -111,41 +122,27 @@ define(["player", "entityfactory", "lib/bison"], function (
               );
             }
           }
-        };
+        });
       }
     },
 
     sendMessage: function (json) {
-      var data;
-      if (this.connection.readyState === 1) {
-        if (this.useBison) {
-          data = BISON.encode(json);
-        } else {
-          data = JSON.stringify(json);
-        }
-        this.connection.send(data);
+      if (this.connection.connected) {
+        this.connection.emit("message", json);
       }
     },
 
     receiveMessage: function (message) {
-      var data, action;
-
       if (this.isListening) {
-        if (this.useBison) {
-          data = BISON.decode(message);
-        } else {
-          data = JSON.parse(message);
-        }
-
         console.debug("data: " + message);
 
-        if (data instanceof Array) {
-          if (data[0] instanceof Array) {
+        if (message instanceof Array) {
+          if (message[0] instanceof Array) {
             // Multiple actions received
-            this.receiveActionBatch(data);
+            this.receiveActionBatch(message);
           } else {
             // Only one action received
-            this.receiveAction(data);
+            this.receiveAction(message);
           }
         }
       }

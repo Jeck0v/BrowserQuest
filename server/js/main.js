@@ -6,7 +6,7 @@ function main(config) {
     WorldServer = require("./worldserver"),
     Log = require("log"),
     _ = require("underscore"),
-    server = new ws.WebSocketServer(config.port),
+    server = new ws.socketIOServer(config.host, config.port),
     metrics = config.metrics_enabled ? new Metrics(config) : null;
   (worlds = []),
     (lastTotalPlayers = 0),
@@ -31,11 +31,11 @@ function main(config) {
       log = new Log(console.debug);
       break;
     case "info":
-      log = new Log(console.log);
+      log = new Log(console.info);
       break;
   }
 
-  console.log("Starting BrowserQuest game server...");
+  console.info("Starting BrowserQuest game server...");
 
   server.onConnect(function (connection) {
     var world, // the one in which the player will be spawned
@@ -82,6 +82,7 @@ function main(config) {
       config.nb_players_per_world,
       server
     );
+    console.log("World constructor", config.map_filepath);
     world.run(config.map_filepath);
     worlds.push(world);
     if (metrics) {
@@ -137,6 +138,7 @@ process.argv.forEach(function (val, index, array) {
 getConfigFile(defaultConfigPath, function (defaultConfig) {
   getConfigFile(customConfigPath, function (localConfig) {
     if (localConfig) {
+      console.log("Local config", localConfig);
       main(localConfig);
     } else if (defaultConfig) {
       main(defaultConfig);

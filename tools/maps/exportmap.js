@@ -29,7 +29,7 @@ function main() {
     if (mode === "client") {
       // map in a .json file for ajax loading
       fs.writeFile(destination + ".json", jsonMap, function (err, file) {
-        console.log(
+        console.info(
           "Finished processing map file: " + destination + ".json was saved."
         );
       });
@@ -37,13 +37,13 @@ function main() {
       // map in a .js file for web worker loading
       jsonMap = "var mapData = " + JSON.stringify(map);
       fs.writeFile(destination + ".js", jsonMap, function (err, file) {
-        console.log(
+        console.info(
           "Finished processing map file: " + destination + ".js was saved."
         );
       });
     } else {
       fs.writeFile(destination, jsonMap, function (err, file) {
-        console.log(
+        console.info(
           "Finished processing map file: " + destination + " was saved."
         );
       });

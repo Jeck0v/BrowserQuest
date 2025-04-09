@@ -15,7 +15,7 @@ module.exports = Metrics = Class.extend({
     this.isReady = false;
 
     this.client.on("connect", function () {
-      console.log(
+      console.info(
         "Metrics enabled: memcached client connected to " +
           config.memcached_host +
           ":" +

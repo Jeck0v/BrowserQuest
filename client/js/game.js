@@ -210,7 +210,7 @@ define([
       this.map = new Map(!this.renderer.upscaledRendering, this);
 
       this.map.ready(function () {
-        console.log("Map loaded.");
+        console.info("Map loaded.");
         var tilesetIndex = self.renderer.upscaledRendering
           ? 0
           : self.renderer.scale - 1;
@@ -454,7 +454,7 @@ define([
     },
 
     loadSprites: function () {
-      console.log("Loading sprites...");
+      console.info("Loading sprites...");
       this.spritesets = [];
       this.spritesets[0] = {};
       this.spritesets[1] = {};
@@ -575,7 +575,7 @@ define([
           this.pathingGrid[i][j] = this.map.grid[i][j];
         }
       }
-      console.log("Initialized the pathing grid with static colliding cells.");
+      console.info("Initialized the pathing grid with static colliding cells.");
     },
 
     initEntityGrid: function () {
@@ -586,7 +586,7 @@ define([
           this.entityGrid[i][j] = {};
         }
       }
-      console.log("Initialized the entity grid.");
+      console.info("Initialized the entity grid.");
     },
 
     initRenderingGrid: function () {
@@ -597,7 +597,7 @@ define([
           this.renderingGrid[i][j] = {};
         }
       }
-      console.log("Initialized the rendering grid.");
+      console.info("Initialized the rendering grid.");
     },
 
     initItemGrid: function () {
@@ -608,7 +608,7 @@ define([
           this.itemGrid[i][j] = {};
         }
       }
-      console.log("Initialized the item grid.");
+      console.info("Initialized the item grid.");
     },
 
     /**
@@ -634,7 +634,7 @@ define([
           self.animatedTiles.push(tile);
         }
       }, 1);
-      //console.log("Initialized animated tiles.");
+      //console.info("Initialized animated tiles.");
     },
 
     addToRenderingGrid: function (entity, x, y) {
@@ -782,25 +782,13 @@ define([
           self.initItemGrid();
           self.initPathingGrid();
           self.initRenderingGrid();
-          self.initAnimatedTiles();
 
           self.setPathfinder(new Pathfinder(self.map.width, self.map.height));
 
           self.initPlayer();
           self.setCursor("hand");
 
-          // Render map immediately
-          self.renderer.renderStaticCanvases();
-
-          // Start connection after map is ready
-          self.connect(function () {
-            // Ensure map is rendered after connection
-            self.forceMapRender();
-
-            if (started_callback) {
-              started_callback();
-            }
-          });
+          self.connect(started_callback);
 
           clearInterval(wait);
         }
@@ -824,11 +812,11 @@ define([
     start: function () {
       this.tick();
       this.hasNeverStarted = false;
-      console.log("Game loop started.");
+      console.info("Game loop started.");
     },
 
     stop: function () {
-      console.log("Game stopped.");
+      console.info("Game stopped.");
       this.isStopped = true;
     },
 
@@ -873,7 +861,7 @@ define([
       });
 
       this.client.onConnected(function () {
-        console.log("Starting client/server handshake");
+        console.info("Starting client/server handshake");
 
         self.player.name = self.username;
         self.started = true;
@@ -900,8 +888,7 @@ define([
       });
 
       this.client.onWelcome(function (id, name, x, y, hp) {
-        console.log("Received player ID from server : " + id);
-        console.log("Welcome received! Moving from connection screen...");
+        console.info("Received player ID from server : " + id);
         self.player.id = id;
         self.playerId = id;
         // Always accept name received from the server which will
@@ -911,18 +898,11 @@ define([
         self.player.setMaxHitPoints(hp);
 
         self.updateBars();
-
-        // Add the player to the game entities first
-        self.addEntity(self.player);
-
-        // Force the map to render completely from scratch
-        setTimeout(function () {
-          self.forceMapRender();
-        }, 100);
-
+        self.resetCamera();
         self.updatePlateauMode();
         self.audioManager.updateMusic();
 
+        self.addEntity(self.player);
         self.player.dirtyRect = self.renderer.getEntityBoundingRect(
           self.player
         );
@@ -944,271 +924,832 @@ define([
           self.storage.setPlayerName(name);
         }
 
-        // Call the gamestart_callback to trigger the game UI transition
-        if (self.gamestart_callback) {
-          self.gamestart_callback();
-        }
-      });
+        self.player.onStartPathing(function (path) {
+          var i = path.length - 1,
+            x = path[i][0],
+            y = path[i][1];
 
-      this.client.onEntityList(function (list) {
-        var entityIds = _.pluck(self.entities, "id"),
-          knownIds = _.intersection(entityIds, list),
-          newIds = _.difference(list, knownIds);
+          if (self.player.isMovingToLoot()) {
+            self.player.isLootMoving = false;
+          } else if (!self.player.isAttacking()) {
+            self.client.sendMove(x, y);
+          }
 
-        self.obsoleteEntities = _.reject(self.entities, function (entity) {
-          return _.include(knownIds, entity.id) || entity.id === self.player.id;
+          // Target cursor position
+          self.selectedX = x;
+          self.selectedY = y;
+          self.selectedCellVisible = true;
+
+          if (self.renderer.mobile || self.renderer.tablet) {
+            self.drawTarget = true;
+            self.clearTarget = true;
+            self.renderer.targetRect = self.renderer.getTargetBoundingRect();
+            self.checkOtherDirtyRects(
+              self.renderer.targetRect,
+              null,
+              self.selectedX,
+              self.selectedY
+            );
+          }
         });
 
-        // Destroy entities outside of the player's zone group
-        self.removeObsoleteEntities();
-
-        // Ask the server for spawn information about unknown entities
-        if (_.size(newIds) > 0) {
-          self.client.sendWho(newIds);
-        }
-      });
-
-      this.client.onEntityMove(function (id, x, y) {
-        var entity = null;
-
-        if (id !== self.playerId) {
-          entity = self.getEntityById(id);
-
-          if (entity) {
-            if (self.player.isAttackedBy(entity)) {
-              self.tryUnlockingAchievement("COWARD");
+        self.player.onCheckAggro(function () {
+          self.forEachMob(function (mob) {
+            if (
+              mob.isAggressive &&
+              !mob.isAttacking() &&
+              self.player.isNear(mob, mob.aggroRange)
+            ) {
+              self.player.aggro(mob);
             }
-            entity.disengage();
-            entity.idle();
-            self.makeCharacterGoTo(entity, x, y);
+          });
+        });
+
+        self.player.onAggro(function (mob) {
+          if (
+            !mob.isWaitingToAttack(self.player) &&
+            !self.player.isAttackedBy(mob)
+          ) {
+            self.player.log_info(
+              "Aggroed by " +
+                mob.id +
+                " at (" +
+                self.player.gridX +
+                ", " +
+                self.player.gridY +
+                ")"
+            );
+            self.client.sendAggro(mob);
+            mob.waitToAttack(self.player);
           }
-        }
-      });
+        });
 
-      this.client.onEntityDestroy(function (id) {
-        var entity = self.getEntityById(id);
-        if (entity) {
-          if (entity instanceof Item) {
-            self.removeItem(entity);
-          } else {
-            self.removeEntity(entity);
+        self.player.onBeforeStep(function () {
+          var blockingEntity = self.getEntityAt(
+            self.player.nextGridX,
+            self.player.nextGridY
+          );
+          if (blockingEntity && blockingEntity.id !== self.playerId) {
+            console.debug("Blocked by " + blockingEntity.id);
           }
-          console.debug("Entity was destroyed: " + entity.id);
-        }
-      });
+          self.unregisterEntityPosition(self.player);
+        });
 
-      this.client.onPlayerMoveToItem(function (playerId, itemId) {
-        var player, item;
-
-        if (playerId !== self.playerId) {
-          player = self.getEntityById(playerId);
-          item = self.getEntityById(itemId);
-
-          if (player && item) {
-            self.makeCharacterGoTo(player, item.gridX, item.gridY);
+        self.player.onStep(function () {
+          if (self.player.hasNextStep()) {
+            self.registerEntityDualPosition(self.player);
           }
-        }
-      });
 
-      this.client.onEntityAttack(function (attackerId, targetId) {
-        var attacker = self.getEntityById(attackerId),
-          target = self.getEntityById(targetId);
+          if (self.isZoningTile(self.player.gridX, self.player.gridY)) {
+            self.enqueueZoningFrom(self.player.gridX, self.player.gridY);
+          }
 
-        if (attacker && target && attacker.id !== self.playerId) {
-          console.debug(attacker.id + " attacks " + target.id);
+          self.player.forEachAttacker(function (attacker) {
+            if (attacker.isAdjacent(attacker.target)) {
+              attacker.lookAtTarget();
+            } else {
+              attacker.follow(self.player);
+            }
+          });
 
           if (
-            attacker &&
-            target instanceof Player &&
-            target.id !== self.playerId &&
-            target.target &&
-            target.target.id === attacker.id &&
-            attacker.getDistanceToEntity(target) < 3
+            (self.player.gridX <= 85 &&
+              self.player.gridY <= 179 &&
+              self.player.gridY > 178) ||
+            (self.player.gridX <= 85 &&
+              self.player.gridY <= 266 &&
+              self.player.gridY > 265)
           ) {
-            setTimeout(function () {
-              self.createAttackLink(attacker, target);
-            }, 200); // delay to prevent other players attacking mobs from ending up on the same tile as they walk towards each other.
-          } else {
-            self.createAttackLink(attacker, target);
+            self.tryUnlockingAchievement("INTO_THE_WILD");
           }
-        }
-      });
 
-      this.client.onPlayerDamageMob(function (mobId, points) {
-        var mob = self.getEntityById(mobId);
-        if (mob && points) {
-          self.infoManager.addDamageInfo(
-            points,
-            mob.x,
-            mob.y - 15,
-            "inflicted"
-          );
-        }
-      });
-
-      this.client.onPlayerKillMob(function (kind) {
-        var mobName = Types.getKindAsString(kind);
-
-        if (mobName === "skeleton2") {
-          mobName = "greater skeleton";
-        }
-
-        if (mobName === "eye") {
-          mobName = "evil eye";
-        }
-
-        if (mobName === "deathknight") {
-          mobName = "death knight";
-        }
-
-        if (mobName === "boss") {
-          self.showNotification("You killed the skeleton king");
-        } else {
-          if (_.include(["a", "e", "i", "o", "u"], mobName[0])) {
-            self.showNotification("You killed an " + mobName);
-          } else {
-            self.showNotification("You killed a " + mobName);
+          if (
+            self.player.gridX <= 85 &&
+            self.player.gridY <= 293 &&
+            self.player.gridY > 292
+          ) {
+            self.tryUnlockingAchievement("AT_WORLDS_END");
           }
-        }
 
-        self.storage.incrementTotalKills();
-        self.tryUnlockingAchievement("HUNTER");
-
-        if (kind === Types.Entities.RAT) {
-          self.storage.incrementRatCount();
-          self.tryUnlockingAchievement("ANGRY_RATS");
-        }
-
-        if (
-          kind === Types.Entities.SKELETON ||
-          kind === Types.Entities.SKELETON2
-        ) {
-          self.storage.incrementSkeletonCount();
-          self.tryUnlockingAchievement("SKULL_COLLECTOR");
-        }
-
-        if (kind === Types.Entities.BOSS) {
-          self.tryUnlockingAchievement("HERO");
-        }
-      });
-
-      this.client.onPlayerChangeHealth(function (points, isRegen) {
-        var player = self.player,
-          diff,
-          isHurt;
-
-        if (player && !player.isDead && !player.invincible) {
-          isHurt = points <= player.hitPoints;
-          diff = points - player.hitPoints;
-          player.hitPoints = points;
-
-          if (player.hitPoints <= 0) {
-            player.die();
+          if (
+            self.player.gridX <= 85 &&
+            self.player.gridY <= 100 &&
+            self.player.gridY > 99
+          ) {
+            self.tryUnlockingAchievement("NO_MANS_LAND");
           }
-          if (isHurt) {
-            player.hurt();
-            self.infoManager.addDamageInfo(
-              diff,
-              player.x,
-              player.y - 15,
-              "received"
-            );
-            self.audioManager.playSound("hurt");
-            self.storage.addDamage(-diff);
-            self.tryUnlockingAchievement("MEATSHIELD");
-            if (self.playerhurt_callback) {
-              self.playerhurt_callback();
+
+          if (
+            self.player.gridX <= 85 &&
+            self.player.gridY <= 51 &&
+            self.player.gridY > 50
+          ) {
+            self.tryUnlockingAchievement("HOT_SPOT");
+          }
+
+          if (
+            self.player.gridX <= 27 &&
+            self.player.gridY <= 123 &&
+            self.player.gridY > 112
+          ) {
+            self.tryUnlockingAchievement("TOMB_RAIDER");
+          }
+
+          self.updatePlayerCheckpoint();
+
+          if (!self.player.isDead) {
+            self.audioManager.updateMusic();
+          }
+        });
+
+        self.player.onStopPathing(function (x, y) {
+          if (self.player.hasTarget()) {
+            self.player.lookAtTarget();
+          }
+
+          self.selectedCellVisible = false;
+
+          if (self.isItemAt(x, y)) {
+            var item = self.getItemAt(x, y);
+
+            try {
+              self.player.loot(item);
+              self.client.sendLoot(item); // Notify the server that this item has been looted
+              self.removeItem(item);
+              self.showNotification(item.getLootMessage());
+
+              if (item.type === "armor") {
+                self.tryUnlockingAchievement("FAT_LOOT");
+              }
+
+              if (item.type === "weapon") {
+                self.tryUnlockingAchievement("A_TRUE_WARRIOR");
+              }
+
+              if (item.kind === Types.Entities.CAKE) {
+                self.tryUnlockingAchievement("FOR_SCIENCE");
+              }
+
+              if (item.kind === Types.Entities.FIREPOTION) {
+                self.tryUnlockingAchievement("FOXY");
+                self.audioManager.playSound("firefox");
+              }
+
+              if (Types.isHealingItem(item.kind)) {
+                self.audioManager.playSound("heal");
+              } else {
+                self.audioManager.playSound("loot");
+              }
+
+              if (
+                item.wasDropped &&
+                !_(item.playersInvolved).include(self.playerId)
+              ) {
+                self.tryUnlockingAchievement("NINJA_LOOT");
+              }
+            } catch (e) {
+              if (e instanceof Exceptions.LootException) {
+                self.showNotification(e.message);
+                self.audioManager.playSound("noloot");
+              } else {
+                throw e;
+              }
             }
-          } else if (!isRegen) {
-            self.infoManager.addDamageInfo(
-              "+" + diff,
-              player.x,
-              player.y - 15,
-              "healed"
-            );
           }
-          self.updateBars();
-        }
-      });
 
-      this.client.onPlayerChangeMaxHitPoints(function (hp) {
-        self.player.maxHitPoints = hp;
-        self.player.hitPoints = hp;
-        self.updateBars();
-      });
+          if (!self.player.hasTarget() && self.map.isDoor(x, y)) {
+            var dest = self.map.getDoorDestination(x, y);
 
-      this.client.onPlayerEquipItem(function (playerId, itemKind) {
-        var player = self.getEntityById(playerId),
-          itemName = Types.getKindAsString(itemKind);
+            self.player.setGridPosition(dest.x, dest.y);
+            self.player.nextGridX = dest.x;
+            self.player.nextGridY = dest.y;
+            self.player.turnTo(dest.orientation);
+            self.client.sendTeleport(dest.x, dest.y);
 
-        if (player) {
-          if (Types.isArmor(itemKind)) {
-            player.setSprite(self.sprites[itemName]);
-          } else if (Types.isWeapon(itemKind)) {
-            player.setWeaponName(itemName);
-          }
-        }
-      });
+            if (self.renderer.mobile && dest.cameraX && dest.cameraY) {
+              self.camera.setGridPosition(dest.cameraX, dest.cameraY);
+              self.resetZone();
+            } else {
+              if (dest.portal) {
+                self.assignBubbleTo(self.player);
+              } else {
+                self.camera.focusEntity(self.player);
+                self.resetZone();
+              }
+            }
 
-      this.client.onPlayerTeleport(function (id, x, y) {
-        var entity = null,
-          currentOrientation;
-
-        if (id !== self.playerId) {
-          entity = self.getEntityById(id);
-
-          if (entity) {
-            currentOrientation = entity.orientation;
-
-            self.makeCharacterTeleportTo(entity, x, y);
-            entity.setOrientation(currentOrientation);
-
-            entity.forEachAttacker(function (attacker) {
+            if (_.size(self.player.attackers) > 0) {
+              setTimeout(function () {
+                self.tryUnlockingAchievement("COWARD");
+              }, 500);
+            }
+            self.player.forEachAttacker(function (attacker) {
               attacker.disengage();
               attacker.idle();
-              attacker.stop();
             });
+
+            self.updatePlateauMode();
+
+            self.checkUndergroundAchievement();
+
+            if (self.renderer.mobile || self.renderer.tablet) {
+              // When rendering with dirty rects, clear the whole screen when entering a door.
+              self.renderer.clearScreen(self.renderer.context);
+            }
+
+            if (dest.portal) {
+              self.audioManager.playSound("teleport");
+            }
+
+            if (!self.player.isDead) {
+              self.audioManager.updateMusic();
+            }
           }
+
+          if (self.player.target instanceof Npc) {
+            self.makeNpcTalk(self.player.target);
+          } else if (self.player.target instanceof Chest) {
+            self.client.sendOpen(self.player.target);
+            self.audioManager.playSound("chest");
+          }
+
+          self.player.forEachAttacker(function (attacker) {
+            if (!attacker.isAdjacentNonDiagonal(self.player)) {
+              attacker.follow(self.player);
+            }
+          });
+
+          self.unregisterEntityPosition(self.player);
+          self.registerEntityPosition(self.player);
+        });
+
+        self.player.onRequestPath(function (x, y) {
+          var ignored = [self.player]; // Always ignore self
+
+          if (self.player.hasTarget()) {
+            ignored.push(self.player.target);
+          }
+          return self.findPath(self.player, x, y, ignored);
+        });
+
+        self.player.onDeath(function () {
+          console.info(self.playerId + " is dead");
+
+          self.player.stopBlinking();
+          self.player.setSprite(self.sprites["death"]);
+          self.player.animate("death", 120, 1, function () {
+            console.info(self.playerId + " was removed");
+
+            self.removeEntity(self.player);
+            self.removeFromRenderingGrid(
+              self.player,
+              self.player.gridX,
+              self.player.gridY
+            );
+
+            self.player = null;
+            self.client.disable();
+
+            setTimeout(function () {
+              self.playerdeath_callback();
+            }, 1000);
+          });
+
+          self.player.forEachAttacker(function (attacker) {
+            attacker.disengage();
+            attacker.idle();
+          });
+
+          self.audioManager.fadeOutCurrentMusic();
+          self.audioManager.playSound("death");
+        });
+
+        self.player.onHasMoved(function (player) {
+          self.assignBubbleTo(player);
+        });
+
+        self.player.onArmorLoot(function (armorName) {
+          self.player.switchArmor(self.sprites[armorName]);
+        });
+
+        self.player.onSwitchItem(function () {
+          self.storage.savePlayer(
+            self.renderer.getPlayerImage(),
+            self.player.getArmorName(),
+            self.player.getWeaponName()
+          );
+          if (self.equipment_callback) {
+            self.equipment_callback();
+          }
+        });
+
+        self.player.onInvincible(function () {
+          self.invincible_callback();
+          self.player.switchArmor(self.sprites["firefox"]);
+        });
+
+        self.client.onSpawnItem(function (item, x, y) {
+          console.info(
+            "Spawned " +
+              Types.getKindAsString(item.kind) +
+              " (" +
+              item.id +
+              ") at " +
+              x +
+              ", " +
+              y
+          );
+          self.addItem(item, x, y);
+        });
+
+        self.client.onSpawnChest(function (chest, x, y) {
+          console.info("Spawned chest (" + chest.id + ") at " + x + ", " + y);
+          chest.setSprite(self.sprites[chest.getSpriteName()]);
+          chest.setGridPosition(x, y);
+          chest.setAnimation("idle_down", 150);
+          self.addEntity(chest, x, y);
+
+          chest.onOpen(function () {
+            chest.stopBlinking();
+            chest.setSprite(self.sprites["death"]);
+            chest.setAnimation("death", 120, 1, function () {
+              console.info(chest.id + " was removed");
+              self.removeEntity(chest);
+              self.removeFromRenderingGrid(chest, chest.gridX, chest.gridY);
+              self.previousClickPosition = {};
+            });
+          });
+        });
+
+        self.client.onSpawnCharacter(function (
+          entity,
+          x,
+          y,
+          orientation,
+          targetId
+        ) {
+          if (!self.entityIdExists(entity.id)) {
+            try {
+              if (entity.id !== self.playerId) {
+                entity.setSprite(self.sprites[entity.getSpriteName()]);
+                entity.setGridPosition(x, y);
+                entity.setOrientation(orientation);
+                entity.idle();
+
+                self.addEntity(entity);
+
+                console.debug(
+                  "Spawned " +
+                    Types.getKindAsString(entity.kind) +
+                    " (" +
+                    entity.id +
+                    ") at " +
+                    entity.gridX +
+                    ", " +
+                    entity.gridY
+                );
+
+                if (entity instanceof Character) {
+                  entity.onBeforeStep(function () {
+                    self.unregisterEntityPosition(entity);
+                  });
+
+                  entity.onStep(function () {
+                    if (!entity.isDying) {
+                      self.registerEntityDualPosition(entity);
+
+                      entity.forEachAttacker(function (attacker) {
+                        if (attacker.isAdjacent(attacker.target)) {
+                          attacker.lookAtTarget();
+                        } else {
+                          attacker.follow(entity);
+                        }
+                      });
+                    }
+                  });
+
+                  entity.onStopPathing(function (x, y) {
+                    if (!entity.isDying) {
+                      if (
+                        entity.hasTarget() &&
+                        entity.isAdjacent(entity.target)
+                      ) {
+                        entity.lookAtTarget();
+                      }
+
+                      if (entity instanceof Player) {
+                        var gridX = entity.destination.gridX,
+                          gridY = entity.destination.gridY;
+
+                        if (self.map.isDoor(gridX, gridY)) {
+                          var dest = self.map.getDoorDestination(gridX, gridY);
+                          entity.setGridPosition(dest.x, dest.y);
+                        }
+                      }
+
+                      entity.forEachAttacker(function (attacker) {
+                        if (
+                          !attacker.isAdjacentNonDiagonal(entity) &&
+                          attacker.id !== self.playerId
+                        ) {
+                          attacker.follow(entity);
+                        }
+                      });
+
+                      self.unregisterEntityPosition(entity);
+                      self.registerEntityPosition(entity);
+                    }
+                  });
+
+                  entity.onRequestPath(function (x, y) {
+                    var ignored = [entity], // Always ignore self
+                      ignoreTarget = function (target) {
+                        ignored.push(target);
+
+                        // also ignore other attackers of the target entity
+                        target.forEachAttacker(function (attacker) {
+                          ignored.push(attacker);
+                        });
+                      };
+
+                    if (entity.hasTarget()) {
+                      ignoreTarget(entity.target);
+                    } else if (entity.previousTarget) {
+                      // If repositioning before attacking again, ignore previous target
+                      // See: tryMovingToADifferentTile()
+                      ignoreTarget(entity.previousTarget);
+                    }
+
+                    return self.findPath(entity, x, y, ignored);
+                  });
+
+                  entity.onDeath(function () {
+                    console.info(entity.id + " is dead");
+
+                    if (entity instanceof Mob) {
+                      // Keep track of where mobs die in order to spawn their dropped items
+                      // at the right position later.
+                      self.deathpositions[entity.id] = {
+                        x: entity.gridX,
+                        y: entity.gridY,
+                      };
+                    }
+
+                    entity.isDying = true;
+                    entity.setSprite(
+                      self.sprites[entity instanceof Mobs.Rat ? "rat" : "death"]
+                    );
+                    entity.animate("death", 120, 1, function () {
+                      console.info(entity.id + " was removed");
+
+                      self.removeEntity(entity);
+                      self.removeFromRenderingGrid(
+                        entity,
+                        entity.gridX,
+                        entity.gridY
+                      );
+                    });
+
+                    entity.forEachAttacker(function (attacker) {
+                      attacker.disengage();
+                    });
+
+                    if (
+                      self.player.target &&
+                      self.player.target.id === entity.id
+                    ) {
+                      self.player.disengage();
+                    }
+
+                    // Upon death, this entity is removed from both grids, allowing the player
+                    // to click very fast in order to loot the dropped item and not be blocked.
+                    // The entity is completely removed only after the death animation has ended.
+                    self.removeFromEntityGrid(
+                      entity,
+                      entity.gridX,
+                      entity.gridY
+                    );
+                    self.removeFromPathingGrid(entity.gridX, entity.gridY);
+
+                    if (self.camera.isVisible(entity)) {
+                      self.audioManager.playSound(
+                        "kill" + Math.floor(Math.random() * 2 + 1)
+                      );
+                    }
+
+                    self.updateCursor();
+                  });
+
+                  entity.onHasMoved(function (entity) {
+                    self.assignBubbleTo(entity); // Make chat bubbles follow moving entities
+                  });
+
+                  if (entity instanceof Mob) {
+                    if (targetId) {
+                      var player = self.getEntityById(targetId);
+                      if (player) {
+                        self.createAttackLink(entity, player);
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.error(e);
+            }
+          } else {
+            console.debug(
+              "Character " + entity.id + " already exists. Don't respawn."
+            );
+          }
+        });
+
+        self.client.onDespawnEntity(function (entityId) {
+          var entity = self.getEntityById(entityId);
+
+          if (entity) {
+            console.info(
+              "Despawning " +
+                Types.getKindAsString(entity.kind) +
+                " (" +
+                entity.id +
+                ")"
+            );
+
+            if (
+              entity.gridX === self.previousClickPosition.x &&
+              entity.gridY === self.previousClickPosition.y
+            ) {
+              self.previousClickPosition = {};
+            }
+
+            if (entity instanceof Item) {
+              self.removeItem(entity);
+            } else if (entity instanceof Character) {
+              entity.forEachAttacker(function (attacker) {
+                if (attacker.canReachTarget()) {
+                  attacker.hit();
+                }
+              });
+              entity.die();
+            } else if (entity instanceof Chest) {
+              entity.open();
+            }
+
+            entity.clean();
+          }
+        });
+
+        self.client.onItemBlink(function (id) {
+          var item = self.getEntityById(id);
+
+          if (item) {
+            item.blink(150);
+          }
+        });
+
+        self.client.onEntityMove(function (id, x, y) {
+          var entity = null;
+
+          if (id !== self.playerId) {
+            entity = self.getEntityById(id);
+
+            if (entity) {
+              if (self.player.isAttackedBy(entity)) {
+                self.tryUnlockingAchievement("COWARD");
+              }
+              entity.disengage();
+              entity.idle();
+              self.makeCharacterGoTo(entity, x, y);
+            }
+          }
+        });
+
+        self.client.onEntityDestroy(function (id) {
+          var entity = self.getEntityById(id);
+          if (entity) {
+            if (entity instanceof Item) {
+              self.removeItem(entity);
+            } else {
+              self.removeEntity(entity);
+            }
+            console.debug("Entity was destroyed: " + entity.id);
+          }
+        });
+
+        self.client.onPlayerMoveToItem(function (playerId, itemId) {
+          var player, item;
+
+          if (playerId !== self.playerId) {
+            player = self.getEntityById(playerId);
+            item = self.getEntityById(itemId);
+
+            if (player && item) {
+              self.makeCharacterGoTo(player, item.gridX, item.gridY);
+            }
+          }
+        });
+
+        self.client.onEntityAttack(function (attackerId, targetId) {
+          var attacker = self.getEntityById(attackerId),
+            target = self.getEntityById(targetId);
+
+          if (attacker && target && attacker.id !== self.playerId) {
+            console.debug(attacker.id + " attacks " + target.id);
+
+            if (
+              attacker &&
+              target instanceof Player &&
+              target.id !== self.playerId &&
+              target.target &&
+              target.target.id === attacker.id &&
+              attacker.getDistanceToEntity(target) < 3
+            ) {
+              setTimeout(function () {
+                self.createAttackLink(attacker, target);
+              }, 200); // delay to prevent other players attacking mobs from ending up on the same tile as they walk towards each other.
+            } else {
+              self.createAttackLink(attacker, target);
+            }
+          }
+        });
+
+        self.client.onPlayerDamageMob(function (mobId, points) {
+          var mob = self.getEntityById(mobId);
+          if (mob && points) {
+            self.infoManager.addDamageInfo(
+              points,
+              mob.x,
+              mob.y - 15,
+              "inflicted"
+            );
+          }
+        });
+
+        self.client.onPlayerKillMob(function (kind) {
+          var mobName = Types.getKindAsString(kind);
+
+          if (mobName === "skeleton2") {
+            mobName = "greater skeleton";
+          }
+
+          if (mobName === "eye") {
+            mobName = "evil eye";
+          }
+
+          if (mobName === "deathknight") {
+            mobName = "death knight";
+          }
+
+          if (mobName === "boss") {
+            self.showNotification("You killed the skeleton king");
+          } else {
+            if (_.include(["a", "e", "i", "o", "u"], mobName[0])) {
+              self.showNotification("You killed an " + mobName);
+            } else {
+              self.showNotification("You killed a " + mobName);
+            }
+          }
+
+          self.storage.incrementTotalKills();
+          self.tryUnlockingAchievement("HUNTER");
+
+          if (kind === Types.Entities.RAT) {
+            self.storage.incrementRatCount();
+            self.tryUnlockingAchievement("ANGRY_RATS");
+          }
+
+          if (
+            kind === Types.Entities.SKELETON ||
+            kind === Types.Entities.SKELETON2
+          ) {
+            self.storage.incrementSkeletonCount();
+            self.tryUnlockingAchievement("SKULL_COLLECTOR");
+          }
+
+          if (kind === Types.Entities.BOSS) {
+            self.tryUnlockingAchievement("HERO");
+          }
+        });
+
+        self.client.onPlayerChangeHealth(function (points, isRegen) {
+          var player = self.player,
+            diff,
+            isHurt;
+
+          if (player && !player.isDead && !player.invincible) {
+            isHurt = points <= player.hitPoints;
+            diff = points - player.hitPoints;
+            player.hitPoints = points;
+
+            if (player.hitPoints <= 0) {
+              player.die();
+            }
+            if (isHurt) {
+              player.hurt();
+              self.infoManager.addDamageInfo(
+                diff,
+                player.x,
+                player.y - 15,
+                "received"
+              );
+              self.audioManager.playSound("hurt");
+              self.storage.addDamage(-diff);
+              self.tryUnlockingAchievement("MEATSHIELD");
+              if (self.playerhurt_callback) {
+                self.playerhurt_callback();
+              }
+            } else if (!isRegen) {
+              self.infoManager.addDamageInfo(
+                "+" + diff,
+                player.x,
+                player.y - 15,
+                "healed"
+              );
+            }
+            self.updateBars();
+          }
+        });
+
+        self.client.onPlayerChangeMaxHitPoints(function (hp) {
+          self.player.maxHitPoints = hp;
+          self.player.hitPoints = hp;
+          self.updateBars();
+        });
+
+        self.client.onPlayerEquipItem(function (playerId, itemKind) {
+          var player = self.getEntityById(playerId),
+            itemName = Types.getKindAsString(itemKind);
+
+          if (player) {
+            if (Types.isArmor(itemKind)) {
+              player.setSprite(self.sprites[itemName]);
+            } else if (Types.isWeapon(itemKind)) {
+              player.setWeaponName(itemName);
+            }
+          }
+        });
+
+        self.client.onPlayerTeleport(function (id, x, y) {
+          var entity = null,
+            currentOrientation;
+
+          if (id !== self.playerId) {
+            entity = self.getEntityById(id);
+
+            if (entity) {
+              currentOrientation = entity.orientation;
+
+              self.makeCharacterTeleportTo(entity, x, y);
+              entity.setOrientation(currentOrientation);
+
+              entity.forEachAttacker(function (attacker) {
+                attacker.disengage();
+                attacker.idle();
+                attacker.stop();
+              });
+            }
+          }
+        });
+
+        self.client.onDropItem(function (item, mobId) {
+          var pos = self.getDeadMobPosition(mobId);
+
+          if (pos) {
+            self.addItem(item, pos.x, pos.y);
+            self.updateCursor();
+          }
+        });
+
+        self.client.onChatMessage(function (entityId, message) {
+          var entity = self.getEntityById(entityId);
+          self.createBubble(entityId, message);
+          self.assignBubbleTo(entity);
+          self.audioManager.playSound("chat");
+        });
+
+        self.client.onPopulationChange(function (worldPlayers, totalPlayers) {
+          if (self.nbplayers_callback) {
+            self.nbplayers_callback(worldPlayers, totalPlayers);
+          }
+        });
+
+        self.client.onDisconnected(function (message) {
+          if (self.player) {
+            self.player.die();
+          }
+          if (self.disconnect_callback) {
+            self.disconnect_callback(message);
+          }
+        });
+
+        self.gamestart_callback();
+
+        if (self.hasNeverStarted) {
+          self.start();
+          started_callback();
         }
       });
-
-      this.client.onDropItem(function (item, mobId) {
-        var pos = self.getDeadMobPosition(mobId);
-
-        if (pos) {
-          self.addItem(item, pos.x, pos.y);
-          self.updateCursor();
-        }
-      });
-
-      this.client.onChatMessage(function (entityId, message) {
-        var entity = self.getEntityById(entityId);
-        self.createBubble(entityId, message);
-        self.assignBubbleTo(entity);
-        self.audioManager.playSound("chat");
-      });
-
-      this.client.onPopulationChange(function (worldPlayers, totalPlayers) {
-        if (self.nbplayers_callback) {
-          self.nbplayers_callback(worldPlayers, totalPlayers);
-        }
-      });
-
-      this.client.onDisconnected(function (message) {
-        if (self.player) {
-          self.player.die();
-        }
-        if (self.disconnect_callback) {
-          self.disconnect_callback(message);
-        }
-      });
-
-      this.gamestart_callback();
-
-      if (self.hasNeverStarted) {
-        self.start();
-        started_callback();
-      }
     },
 
     /**
@@ -1959,16 +2500,6 @@ define([
     resetCamera: function () {
       this.camera.focusEntity(this.player);
       this.resetZone();
-
-      // Force a complete re-render of the game world when camera is reset
-      if (this.renderer) {
-        this.renderer.renderStaticCanvases();
-
-        // Additional fix to ensure all entities are marked for redraw
-        this.forEachEntity(function (entity) {
-          entity.setDirty();
-        });
-      }
     },
 
     say: function (message) {
@@ -2041,21 +2572,7 @@ define([
     },
 
     onGameStart: function (callback) {
-      var self = this;
-      this.gamestart_callback = function () {
-        if (callback) callback();
-
-        // Force map render after game starts and add a slight delay for browser to catch up
-        setTimeout(function () {
-          self.forceMapRender();
-
-          // Add a global window resize handler that forces a re-render
-          window.addEventListener("resize", function () {
-            self.resize();
-            self.forceMapRender();
-          });
-        }, 300);
-      };
+      this.gamestart_callback = callback;
     },
 
     onDisconnect: function (callback) {
@@ -2100,18 +2617,7 @@ define([
       this.camera = this.renderer.camera;
       this.camera.setPosition(x, y);
 
-      // Clear the screen before re-rendering
-      this.renderer.clearScreen(this.renderer.context);
-      this.renderer.clearScreen(this.renderer.background);
-      this.renderer.clearScreen(this.renderer.foreground);
-
-      // Re-render all canvases
       this.renderer.renderStaticCanvases();
-
-      // Force entity redraw
-      this.forEachEntity(function (entity) {
-        entity.setDirty();
-      });
     },
 
     updateBars: function () {
@@ -2280,36 +2786,6 @@ define([
           this.renderer.targetRect = targetRect;
         }
       }
-    },
-
-    forceMapRender: function () {
-      var self = this;
-
-      // Clear all canvases
-      this.renderer.clearScreen(this.renderer.context);
-      this.renderer.clearScreen(this.renderer.background);
-      this.renderer.clearScreen(this.renderer.foreground);
-
-      // Reposition the camera directly on the player
-      if (this.player) {
-        this.camera.lookAt(this.player);
-      }
-
-      // Force redraw of the entire map
-      this.renderer.background.save();
-      this.renderer.setCameraView(this.renderer.background);
-      this.renderer.drawTerrain();
-      this.renderer.background.restore();
-
-      // Force redraw of all entities
-      this.forEachEntity(function (entity) {
-        entity.setDirty();
-      });
-
-      // Make sure UI elements and foreground are redrawn
-      this.renderer.renderFrame();
-
-      console.log("Forced a complete map re-render");
     },
   });
 
