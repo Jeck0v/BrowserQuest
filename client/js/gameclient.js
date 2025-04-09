@@ -47,12 +47,24 @@ define(["player", "entityfactory", "lib/bison"], function (
     },
 
     connect: function (dispatcherMode) {
-      var url = "http://" + this.host + ":" + this.port + "/",
+      var url = "http://" + this.host + ":" + this.port,
         self = this;
 
-      this.connection = io(url, { "force new connection": true });
-      this.connection.on("connection", function (socket) {
+      this.connection = io(url, {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 20000,
+        forceNew: true,
+      });
+
+      this.connection.on("connect", function () {
         console.info("Connected to server " + url);
+      });
+
+      this.connection.on("connect_error", function (error) {
+        console.error("Connection error:", error);
       });
 
       /******

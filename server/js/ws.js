@@ -108,11 +108,19 @@ WS.socketIOServer = Server.extend({
     self.port = port;
     var app = require("express")();
     var http = require("http").Server(app);
-    self.io = require("socket.io")(http);
+
+    // Install with: npm install socket
+    self.io = require("socket.io")(http, {
+      pingTimeout: 60000,
+      pingInterval: 25000,
+      transports: ["websocket", "polling"],
+    });
+
+    // CORS is handled automatically in Socket.IO v2.x
+    // No need for explicit CORS middleware
 
     self.io.on("connection", function (connection) {
       console.info("a user connected");
-
       connection.remoteAddress = connection.handshake.address.address;
 
       var c = new WS.socketIOConnection(self._createId(), connection, self);
@@ -124,7 +132,7 @@ WS.socketIOServer = Server.extend({
     });
 
     self.io.on("error", function (err) {
-      console.error(err.stack);
+      log.error(err.stack);
       self.error_callback();
     });
 
