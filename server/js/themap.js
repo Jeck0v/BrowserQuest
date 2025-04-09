@@ -24,7 +24,7 @@ try {
   console.error("Failed to initialize logger:", e);
 }
 
-module.exports = Map = cls.Class.extend({
+module.exports = TheMap = cls.Class.extend({
   init: function (filepath) {
     console.log("Map constructor", filepath);
     var self = this;

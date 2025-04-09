@@ -82,6 +82,7 @@ function main(config) {
       config.nb_players_per_world,
       server
     );
+    console.log("World constructor", config.map_filepath);
     world.run(config.map_filepath);
     worlds.push(world);
     if (metrics) {
@@ -137,6 +138,7 @@ process.argv.forEach(function (val, index, array) {
 getConfigFile(defaultConfigPath, function (defaultConfig) {
   getConfigFile(customConfigPath, function (localConfig) {
     if (localConfig) {
+      console.log("Local config", localConfig);
       main(localConfig);
     } else if (defaultConfig) {
       main(defaultConfig);
