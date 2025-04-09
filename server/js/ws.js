@@ -1,96 +1,97 @@
-
 var cls = require("./lib/class"),
-    url = require('url'),
-   // wsserver = require("websocket-server"),
-   // miksagoConnection = require('websocket-server/lib/ws/connection'),
-   // worlizeRequest = require('websocket').request,
-    http = require('http'),
-    Utils = require('./utils'),
-    _ = require('underscore'),
-    BISON = require('bison'),
-    WS = {},
-    useBison = false;
+  url = require("url"),
+  // wsserver = require("websocket-server"),
+  // miksagoConnection = require('websocket-server/lib/ws/connection'),
+  // worlizeRequest = require('websocket').request,
+  http = require("http"),
+  Utils = require("./utils"),
+  _ = require("underscore"),
+  BISON = require("bison"),
+  WS = {},
+  useBison = false;
 
 module.exports = WS;
-
 
 /**
  * Abstract Server and Connection classes
  */
 var Server = cls.Class.extend({
-    _connections: {},
-    _counter: 0,
+  _connections: {},
+  _counter: 0,
 
-    init: function(port) {
-        this.port = port;
-    },
-    
-    onConnect: function(callback) {
-        this.connection_callback = callback;
-    },
-    
-    onError: function(callback) {
-        this.error_callback = callback;
-    },
-    
-    broadcast: function(message) {
-        throw "Not implemented";
-    },
-    
-    forEachConnection: function(callback) {
-        _.each(this._connections, callback);
-    },
-    
-    addConnection: function(connection) {
-        this._connections[connection.id] = connection;
-    },
-    
-    removeConnection: function(id) {
-        delete this._connections[id];
-    },
-    
-    getConnection: function(id) {
-        return this._connections[id];
-    },
+  init: function (port) {
+    this.port = port;
+  },
 
-    connectionsCount: function()
-    {
-        return Object.keys(this._connections).length
-    }
+  onConnect: function (callback) {
+    this.connection_callback = callback;
+  },
+
+  onError: function (callback) {
+    this.error_callback = callback;
+  },
+
+  broadcast: function (message) {
+    throw "Not implemented";
+  },
+
+  forEachConnection: function (callback) {
+    _.each(this._connections, callback);
+  },
+
+  addConnection: function (connection) {
+    this._connections[connection.id] = connection;
+  },
+
+  removeConnection: function (id) {
+    delete this._connections[id];
+  },
+
+  getConnection: function (id) {
+    return this._connections[id];
+  },
+
+  connectionsCount: function () {
+    return Object.keys(this._connections).length;
+  },
 });
 
-
 var Connection = cls.Class.extend({
-    init: function(id, connection, server) {
-        this._connection = connection;
-        this._server = server;
-        this.id = id;
-    },
-    
-    onClose: function(callback) {
-        this.close_callback = callback;
-    },
-    
-    listen: function(callback) {
-        this.listen_callback = callback;
-    },
-    
-    broadcast: function(message) {
-        throw "Not implemented";
-    },
-    
-    send: function(message) {
-        throw "Not implemented";
-    },
-    
-    sendUTF8: function(data) {
-        throw "Not implemented";
-    },
-    
-    close: function(logError) {
-        log.info("Closing connection to "+this._connection.remoteAddress+". Error: "+logError);
-        this._connection.close();
-    }
+  init: function (id, connection, server) {
+    this._connection = connection;
+    this._server = server;
+    this.id = id;
+  },
+
+  onClose: function (callback) {
+    this.close_callback = callback;
+  },
+
+  listen: function (callback) {
+    this.listen_callback = callback;
+  },
+
+  broadcast: function (message) {
+    throw "Not implemented";
+  },
+
+  send: function (message) {
+    throw "Not implemented";
+  },
+
+  sendUTF8: function (data) {
+    throw "Not implemented";
+  },
+
+  close: function (logError) {
+    console.info(
+      "Closing connection to " +
+        this._connection.remoteAddress +
+        ". Error: " +
+        logError
+    );
+    this._connection.close();
+  },
 });
 
 /***************
@@ -101,117 +102,104 @@ var Connection = cls.Class.extend({
  ***************/
 
 WS.socketIOServer = Server.extend({
-    init: function(host, port) {
-        self = this;
-        self.host = host;
-        self.port = port;
-        var app = require('express')();
-        var http = require('http').Server(app);
-        self.io = require('socket.io')(http);
+  init: function (host, port) {
+    self = this;
+    self.host = host;
+    self.port = port;
+    var app = require("express")();
+    var http = require("http").Server(app);
+    self.io = require("socket.io")(http);
 
+    self.io.on("connection", function (connection) {
+      console.info("a user connected");
 
-        self.io.on('connection', function(connection){
-          log.info('a user connected');
+      connection.remoteAddress = connection.handshake.address.address;
 
-          connection.remoteAddress = connection.handshake.address.address
+      var c = new WS.socketIOConnection(self._createId(), connection, self);
 
-  
-          var c = new WS.socketIOConnection(self._createId(), connection, self);
-            
-          if(self.connection_callback) {
-                self.connection_callback(c);
-          }
-          self.addConnection(c);
+      if (self.connection_callback) {
+        self.connection_callback(c);
+      }
+      self.addConnection(c);
+    });
 
-        });
+    self.io.on("error", function (err) {
+      console.error(err.stack);
+      self.error_callback();
+    });
 
-        
+    http.listen(port, function () {
+      console.info("listening on *:" + port);
+    });
+  },
 
-        self.io.on('error', function (err) { 
-            log.error(err.stack); 
-            self.error_callback()
+  _createId: function () {
+    return "5" + Utils.random(99) + "" + this._counter++;
+  },
 
-         })
+  broadcast: function (message) {
+    self.io.emit("message", message);
+  },
 
-        http.listen(port, function(){
-          log.info('listening on *:' + port);
-        });
-    },
-
-    _createId: function() {
-        return '5' + Utils.random(99) + '' + (this._counter++);
-    },
-    
-    
-    broadcast: function(message) {
-        self.io.emit("message", message)
-    },
-
-    onRequestStatus: function(status_callback) {
-        this.status_callback = status_callback;
-    }
-    
-
-
+  onRequestStatus: function (status_callback) {
+    this.status_callback = status_callback;
+  },
 });
 
 WS.socketIOConnection = Connection.extend({
-    init: function(id, connection, server) {
+  init: function (id, connection, server) {
+    var self = this;
 
-        var self = this
+    this._super(id, connection, server);
 
-        this._super(id, connection, server);
+    // HANDLE DISPATCHER IN HERE
+    connection.on("dispatch", function (message) {
+      console.log("Received dispatch request");
+      self._connection.emit("dispatched", {
+        status: "OK",
+        host: server.host,
+        port: server.port,
+      });
+    });
 
-        // HANDLE DISPATCHER IN HERE
-        connection.on("dispatch", function (message) {
-            console.log("Received dispatch request")
-            self._connection.emit("dispatched",  { "status" : "OK", host : server.host, port : server.port } )
-        });
+    connection.on("message", function (message) {
+      console.info("Received: " + message);
+      if (self.listen_callback) self.listen_callback(message);
+    });
 
-        connection.on("message", function (message) {
-            log.info("Received: " + message)
-            if (self.listen_callback)
-                self.listen_callback(message)
-        });
+    connection.on("disconnect", function () {
+      if (self.close_callback) {
+        self.close_callback();
+      }
+      delete self._server.removeConnection(self.id);
+    });
+  },
 
-        connection.on("disconnect", function () {
-            if(self.close_callback) {
-                self.close_callback();
-            }
-            delete self._server.removeConnection(self.id);
-        });
+  broadcast: function (message) {
+    throw "Not implemented";
+  },
 
-    },
-    
-    broadcast: function(message) {
-        throw "Not implemented";
-    },
-    
-    send: function(message) {
-        this._connection.emit("message", message);
-    },
-    
-    sendUTF8: function(data) {
-        this.send(data)
-    },
+  send: function (message) {
+    this._connection.emit("message", message);
+  },
 
-    close: function(logError) {
-        log.info("Closing connection to socket"+". Error: " + logError);
-        this._connection.disconnect();
-    }
-    
+  sendUTF8: function (data) {
+    this.send(data);
+  },
 
-
+  close: function (logError) {
+    console.info("Closing connection to socket" + ". Error: " + logError);
+    this._connection.disconnect();
+  },
 });
-
 
 /**
  * MultiVersionWebsocketServer
- * 
+ *
  * Websocket server supporting draft-75, draft-76 and version 08+ of the WebSocket protocol.
  * Fallback for older protocol versions borrowed from https://gist.github.com/1219165
  */
- /*
+/*
 WS.MultiVersionWebsocketServer = Server.extend({
     worlizeServerConfig: {
         // All options *except* 'httpServer' are required when bypassing
@@ -251,7 +239,7 @@ WS.MultiVersionWebsocketServer = Server.extend({
             response.end();
         });
         this._httpServer.listen(port, function() {
-            log.info("Server is listening on port "+port);
+            console.info("Server is listening on port "+port);
         });
         
         this._miksagoServer = wsserver.createServer();
@@ -319,7 +307,7 @@ WS.MultiVersionWebsocketServer = Server.extend({
  * Connection class for Websocket-Node (Worlize)
  * https://github.com/Worlize/WebSocket-Node
  */
- /*
+/*
 WS.worlizeWebSocketConnection = Connection.extend({
     init: function(id, connection, server) {
         var self = this;
@@ -374,7 +362,7 @@ WS.worlizeWebSocketConnection = Connection.extend({
  * Connection class for websocket-server (miksago)
  * https://github.com/miksago/node-websocket-server
  */
- /*
+/*
 WS.miksagoWebSocketConnection = Connection.extend({
     init: function(id, connection, server) {
         var self = this;
