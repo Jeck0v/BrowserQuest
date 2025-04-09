@@ -3,16 +3,17 @@ kind: Service
 metadata:
   name: server-service
   labels:
-    app: server
+    app: browserquest
+    tier: server
 spec:
   selector:
-    app: server
+    app: browserquest
+    tier: server
   ipFamilyPolicy: PreferDualStack
   ipFamilies:
-    - IPv6
     - IPv4
   ports:
     - name: http
-      port: 8000
-      targetPort: 8000
+      port: 80
+      targetPort: 80
   type: ClusterIP
