@@ -34,7 +34,7 @@ define(["player", "entityfactory", "lib/bison"], function (
       this.handlers[Types.Messages.HP] = this.receiveHitPoints;
       this.handlers[Types.Messages.BLINK] = this.receiveBlink;
 
-      this.useBison = false;
+      this.useBison = true;
       this.enable();
     },
 
@@ -59,6 +59,7 @@ define(["player", "entityfactory", "lib/bison"], function (
         this.connection = new WebSocket(url);
       }
 
+      // le pb viens de vers ici ?
       if (dispatcherMode) {
         this.connection.onmessage = function (e) {
           var reply = JSON.parse(e.data);
