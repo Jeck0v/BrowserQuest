@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: server-service
+  labels:
+    app: browserquest
+    tier: server
+spec:
+  selector:
+    app: browserquest
+    tier: server
+  ipFamilyPolicy: PreferDualStack
+  ipFamilies:
+    - IPv4
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+  type: ClusterIP
