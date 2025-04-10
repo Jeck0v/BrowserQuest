@@ -5,6 +5,7 @@
   "dependencies": {
     "bison": ">0",
     "express": ">0",
+    "http-server": "^14.1.1",
     "log": ">0",
     "memcache": "0.3.0",
     "sanitizer": "0.1.2",

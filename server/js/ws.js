@@ -10,6 +10,10 @@ var cls = require("./lib/class"),
   WS = {},
   useBison = false;
 
+const rateLimit = {};
+const MAX_CONNECTIONS_PER_IP = 10;
+const RATE_WINDOW_MS = 60000; // 1 minute
+
 module.exports = WS;
 
 /**
@@ -120,8 +124,34 @@ WS.socketIOServer = Server.extend({
     // No need for explicit CORS middleware
 
     self.io.on("connection", function (connection) {
+      const ip = connection.handshake.address.address;
+
+      // Check rate limit
+      if (!rateLimit[ip]) {
+        rateLimit[ip] = {
+          count: 0,
+          timestamp: Date.now(),
+        };
+      }
+
+      // Reset counter if time window has passed
+      if (Date.now() - rateLimit[ip].timestamp > RATE_WINDOW_MS) {
+        rateLimit[ip].count = 0;
+        rateLimit[ip].timestamp = Date.now();
+      }
+
+      // Increment counter
+      rateLimit[ip].count++;
+
+      // Check if maximum number of connections is reached
+      if (rateLimit[ip].count > MAX_CONNECTIONS_PER_IP) {
+        console.warn(`Rate limit exceeded for IP: ${ip}`);
+        connection.disconnect();
+        return;
+      }
+
       console.info("a user connected");
-      connection.remoteAddress = connection.handshake.address.address;
+      connection.remoteAddress = ip;
 
       var c = new WS.socketIOConnection(self._createId(), connection, self);
 
