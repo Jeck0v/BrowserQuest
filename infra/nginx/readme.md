@@ -26,6 +26,6 @@ Ce NGINX est utilisé comme reverse proxy pour :
 ```bash
 
 kubectl apply -f nginx/nginx-configmap.yaml
-kubectl apply -f deployment/nginx-deployment.yaml
-kubectl apply -f service/nginx-service.yaml
+kubectl apply -f deployement/nginx-deployement.yaml
+kubectl apply -f services/nginx-services.yaml
 ```
