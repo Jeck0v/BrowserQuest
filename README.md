@@ -15,9 +15,11 @@ Maxime Bidan - Louis Dondey - Arnaud Fischer - Alexis Gontier
 
 ## HOW TO RUN?
 
+setup config json file in client/config and server/config (cf documentation)
+
 ```shell
-npm install
-node server/js/main.js
+docker build -t browserquest .
+docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
 
 Then go inside the Client folder and open index.html.
