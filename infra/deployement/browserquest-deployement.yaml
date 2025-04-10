@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: browserquest
+  namespace: default
   labels:
     app: browserquest
 spec:
@@ -33,6 +34,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: reverse-proxy
+  namespace: default
   labels:
     app: reverse-proxy
 spec:

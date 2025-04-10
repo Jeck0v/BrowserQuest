@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: reverse-proxy-config
+  namespace: default
   labels:
     app: reverse-proxy
 data:
