@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "private": false,
   "dependencies": {
-    "bison": ">0",
     "express": ">0",
     "http-server": "^14.1.1",
     "log": ">0",

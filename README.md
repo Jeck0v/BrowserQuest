@@ -11,6 +11,7 @@ Maxime Bidan - Louis Dondey - Arnaud Fischer - Alexis Gontier
 - Updated client and server configuration files to use dynamic hostnames.
 - Modified the client's config.js to properly parse and use the dynamic hostname.
 - Make a dockerfile for running the game everywhere.
+- Improved security with a firewall that blacklist ip base on identified bad behavior, limitation of the number of possible connexion try by IP, validation of player entry.
 
 ## HOW TO RUN?
 

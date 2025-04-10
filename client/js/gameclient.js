@@ -1,8 +1,4 @@
-define(["player", "entityfactory", "lib/bison"], function (
-  Player,
-  EntityFactory,
-  BISON
-) {
+define(["player", "entityfactory"], function (Player, EntityFactory) {
   var GameClient = Class.extend({
     init: function (host, port) {
       this.connection = null;
@@ -33,8 +29,6 @@ define(["player", "entityfactory", "lib/bison"], function (
       this.handlers[Types.Messages.KILL] = this.receiveKill;
       this.handlers[Types.Messages.HP] = this.receiveHitPoints;
       this.handlers[Types.Messages.BLINK] = this.receiveBlink;
-
-      this.useBison = false;
       this.enable();
     },
 

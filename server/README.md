@@ -3,7 +3,6 @@
 The game server currently runs on NodeJS and requires the latest versions of the following npm libraries:
 
 - underscore
-- bison
 - socket.io
 - sanitizer
 - memcached (only if you want metrics)

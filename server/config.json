@@ -1,9 +1,16 @@
 {
-  "host": "localhost",
+  "host": "127.0.0.1",
   "port": 8000,
   "debug_level": "info",
   "nb_players_per_world": 200,
   "nb_worlds": 5,
   "map_filepath": "./server/maps/world_server.json",
-  "metrics_enabled": false
+  "metrics_enabled": false,
+  "security": {
+    "max_connections_per_ip": 10,
+    "rate_limit_window_ms": 60000,
+    "session_timeout_minutes": 10,
+    "max_suspicious_actions": 5,
+    "ban_duration_hours": 1
+  }
 }
