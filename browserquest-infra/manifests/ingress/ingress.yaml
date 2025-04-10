@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: browserquest-ingress
+  namespace: browserquest
+  annotations:
+    haproxy.ingress.kubernetes.io/rewrite-target: /
+    haproxy.ingress.kubernetes.io/use-forwarded-headers: "true"
+spec:
+  ingressClassName: haproxy
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: browserquest
+                port:
+                  number: 80
+          - path: /ws/
+            pathType: Prefix
+            backend:
+              service:
+                name: browserquest
+                port:
+                  number: 8000
