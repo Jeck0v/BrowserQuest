@@ -15,13 +15,14 @@ spec:
     spec:
       containers:
         - name: browserquest
-          image: jeck0v/browserquest:latest
+          image: jeck0v/browserquest:lastest
           ports:
             - containerPort: 80
+              name: http
+            - containerPort: 8080
+              name: websocket
           resources:
             requests:
               cpu: 100m
-              memory: 128Mi
             limits:
-              cpu: 500m
-              memory: 256Mi
+              cpu: 200m

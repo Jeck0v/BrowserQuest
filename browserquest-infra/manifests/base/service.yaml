@@ -4,10 +4,13 @@ metadata:
   name: browserquest
   namespace: browserquest
 spec:
-  type: NodePort
-  ports:
-    - port: 80
-      targetPort: 80
-      nodePort: 30000
   selector:
     app: browserquest
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+    - name: websocket
+      port: 8000
+      targetPort: 8000
+

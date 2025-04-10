@@ -4,12 +4,14 @@ metadata:
   name: browserquest-ingress
   namespace: browserquest
   annotations:
-    haproxy.ingress.kubernetes.io/rewrite-target: /
-    haproxy.ingress.kubernetes.io/use-forwarded-headers: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
-  ingressClassName: haproxy
+  ingressClassName: nginx
   rules:
-    - http:
+    - host: localhost
+      http:
         paths:
           - path: /
             pathType: Prefix
@@ -18,7 +20,7 @@ spec:
                 name: browserquest
                 port:
                   number: 80
-          - path: /ws/
+          - path: /ws
             pathType: Prefix
             backend:
               service:
