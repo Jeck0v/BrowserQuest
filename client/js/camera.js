@@ -86,8 +86,6 @@ define(function () {
         return;
       }
 
-      console.log("Focusing camera on entity at", entity.gridX, entity.gridY);
-
       // Direct approach - center camera on entity
       this.lookAt(entity);
 
@@ -98,15 +96,6 @@ define(function () {
         y = Math.floor((entity.gridY - 1) / h) * h;
 
       this.setGridPosition(x, y);
-
-      console.log(
-        "Camera position after focus:",
-        this.x,
-        this.y,
-        "grid:",
-        this.gridX,
-        this.gridY
-      );
     },
   });
 

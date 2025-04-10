@@ -75,8 +75,6 @@ define(["player", "entityfactory", "lib/bison"], function (
         this.connection.emit("dispatch", true);
 
         this.connection.on("dispatched", function (reply) {
-          console.log("Dispatched: ");
-          console.log(reply);
           if (reply.status === "OK") {
             self.dispatched_callback(reply.host, reply.port);
           } else if (reply.status === "FULL") {

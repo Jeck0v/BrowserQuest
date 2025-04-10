@@ -26,7 +26,6 @@ try {
 
 module.exports = TheMap = cls.Class.extend({
   init: function (filepath) {
-    console.log("Map constructor", filepath);
     var self = this;
 
     this.isLoaded = false;
@@ -35,7 +34,6 @@ module.exports = TheMap = cls.Class.extend({
       console.error("No filepath provided to Map constructor");
       // Add a default filepath as fallback
       filepath = "./server/maps/world_server.json";
-      console.log("Using default filepath:", filepath);
     }
 
     try {

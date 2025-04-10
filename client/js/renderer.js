@@ -848,8 +848,6 @@ define(["camera", "item", "character", "player", "timer"], function (
         this.drawHighTiles(this.foreground);
         this.foreground.restore();
       }
-
-      console.log("Static canvases (terrain, background) have been rendered");
     },
 
     renderFrame: function () {

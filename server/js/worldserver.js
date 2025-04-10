@@ -154,8 +154,6 @@ module.exports = World = cls.Class.extend({
   run: function (mapFilePath) {
     var self = this;
 
-    console.log("Map filepath:", mapFilePath);
-
     this.map = new TheMap(mapFilePath);
 
     this.map.ready(function () {
