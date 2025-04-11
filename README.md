@@ -1,8 +1,12 @@
 # BrowserQuest Rework 2025 [updated & with Socket.IO V2]
 
-## Teams
+## Team 1:
+- [Arnaud Fischer](https://github.com/Jeck0v)
+- [Maxime Bidan](https://github.com/Oomaxime)
+- [Louis Dondey](https://github.com/Kae134)
+- [Alexis Gontier](https://github.com/Alexis-Gontier)
 
-Maxime Bidan - Louis Dondey - Arnaud Fischer - Alexis Gontier
+
 
 ## Changes
 
@@ -21,10 +25,16 @@ setup config json file in client/config and server/config (cf documentation)
 docker build -t browserquest .
 docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
+If you want improve the project, you will need to update the docker image and rebuild + resend to dockerhub, and so modif browserquest-infra/base/deployment.yaml, like this:
+```shell
+docker build -t DockerUserName/ImageName:test .
+docker login
+docker push DockerUserName/ImageName:test
+```
 
 ## Documentation
 
-Documentation is located in client and server directories.
+Documentation is located in client and server directories, and browserquest-infra/docs
 
 ## License
 
