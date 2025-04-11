@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: browserquest-ingress
+  namespace: browserquest
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/websocket-services: "browserquest"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: browserquest
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: browserquest
+                port:
+                  number: 80
+          - path: /socket.io
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: browserquest
+                port:
+                  number: 8000
