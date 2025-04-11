@@ -16,20 +16,56 @@
 - Modified the client's config.js to properly parse and use the dynamic hostname.
 - Make a dockerfile for running the game everywhere.
 - Improved security with a firewall that blacklist ip base on identified bad behavior, limitation of the number of possible connexion try by IP, validation of player entry.
+- Creating a K8S infrastructure with minikube
+- Add path for access to wesbsocket
+- Add loadbalancing with nginx-ingress
+- Add HPA for K8S
+- Add docs for start minikube 
 
 ## HOW TO RUN?
 
 setup config json file in client/config and server/config (cf documentation)
-
 ```shell
 docker build -t browserquest .
 docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
-If you want improve the project, you will need to update the docker image and rebuild + resend to dockerhub, and so modif browserquest-infra/base/deployment.yaml, like this:
+If you want to improve the project, you'll need to update the docker image and rebuild + refer to dockerhub, so modify `browserquest-infra/base/deployment.yaml`, like this:
 ```shell
 docker build -t DockerUserName/ImageName:test .
 docker login
 docker push DockerUserName/ImageName:test
+```
+in `browserquest-infra/base/deployment.yaml`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: browserquest
+  namespace: browserquest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: browserquest
+  template:
+    metadata:
+      labels:
+        app: browserquest
+    spec:
+      containers:
+        - name: browserquest
+          image: DockerUserName/ImageName:test
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8000
+              name: websocket
+          resources:
+            requests:
+              cpu: 500m
+            limits:
+              cpu: 1000m
 ```
 
 ## Documentation
