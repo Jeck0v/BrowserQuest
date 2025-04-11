@@ -15,9 +15,9 @@ spec:
     spec:
       containers:
         - name: browserquest
-          image: jeck0v/browserquest:test
+          image: maxbdk/browserquest:test
           ports:
-            - containerPort: 80
+            - containerPort: 8080
               name: http
             - containerPort: 8000
               name: websocket

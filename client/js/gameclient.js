@@ -41,15 +41,15 @@ define(["player", "entityfactory"], function (Player, EntityFactory) {
     },
 
     connect: function (dispatcherMode) {
-      var url = "http://" + this.host + ":" + this.port,
+      var url = "ws://" + this.host + ":" + this.port,
         self = this;
 
       this.connection = io(url, {
-        transports: ["websocket", "polling"],
+        transports: ["websocket"],
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 2000,
+        timeout: 5000,
         forceNew: true,
       });
 
