@@ -20,7 +20,9 @@
 - Add path for access to wesbsocket
 - Add loadbalancing with nginx-ingress
 - Add HPA for K8S
-- Add docs for start minikube 
+- Add docs for start minikube
+- Removed unecessary console.log, error, ...
+- Refactored some part of the code
 
 ## HOW TO RUN?
 
