@@ -1,14 +1,12 @@
 var cls = require("./lib/class"),
   url = require("url"),
-  // wsserver = require("websocket-server"),
-  // miksagoConnection = require('websocket-server/lib/ws/connection'),
-  // worlizeRequest = require('websocket').request,
   http = require("http"),
   Utils = require("./utils"),
   _ = require("underscore"),
-  BISON = require("bison"),
-  WS = {},
-  useBison = false;
+  WS = {};
+
+const rateLimit = {};
+const MAX_CONNECTIONS_PER_IP = 10;
 
 module.exports = WS;
 
@@ -94,13 +92,6 @@ var Connection = cls.Class.extend({
   },
 });
 
-/***************
-    SOCKET.IO
-    Author: Nenu Adrian
-            http://nenuadrian.com
-            http://codevolution.com
- ***************/
-
 WS.socketIOServer = Server.extend({
   init: function (host, port) {
     self = this;
@@ -109,19 +100,32 @@ WS.socketIOServer = Server.extend({
     var app = require("express")();
     var http = require("http").Server(app);
 
-    // Install with: npm install socket
     self.io = require("socket.io")(http, {
       pingTimeout: 60000,
       pingInterval: 25000,
       transports: ["websocket", "polling"],
     });
 
-    // CORS is handled automatically in Socket.IO v2.x
-    // No need for explicit CORS middleware
-
     self.io.on("connection", function (connection) {
+      const ip = connection.handshake.address.address;
+
+      if (!rateLimit[ip]) {
+        rateLimit[ip] = {
+          count: 0,
+          timestamp: Date.now(),
+        };
+      }
+
+      rateLimit[ip].count++;
+
+      if (rateLimit[ip].count > MAX_CONNECTIONS_PER_IP) {
+        self.firewall.logSuspiciousActivity(ip, "Too many connection attempts");
+        connection.disconnect();
+        return;
+      }
+
       console.info("a user connected");
-      connection.remoteAddress = connection.handshake.address.address;
+      connection.remoteAddress = ip;
 
       var c = new WS.socketIOConnection(self._createId(), connection, self);
 
@@ -160,7 +164,6 @@ WS.socketIOConnection = Connection.extend({
 
     this._super(id, connection, server);
 
-    // HANDLE DISPATCHER IN HERE
     connection.on("dispatch", function (message) {
       self._connection.emit("dispatched", {
         status: "OK",

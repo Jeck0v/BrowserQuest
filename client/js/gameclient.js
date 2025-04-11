@@ -1,8 +1,4 @@
-define(["player", "entityfactory", "lib/bison"], function (
-  Player,
-  EntityFactory,
-  BISON
-) {
+define(["player", "entityfactory"], function (Player, EntityFactory) {
   var GameClient = Class.extend({
     init: function (host, port) {
       this.connection = null;
@@ -33,8 +29,6 @@ define(["player", "entityfactory", "lib/bison"], function (
       this.handlers[Types.Messages.KILL] = this.receiveKill;
       this.handlers[Types.Messages.HP] = this.receiveHitPoints;
       this.handlers[Types.Messages.BLINK] = this.receiveBlink;
-
-      this.useBison = false;
       this.enable();
     },
 
@@ -47,15 +41,15 @@ define(["player", "entityfactory", "lib/bison"], function (
     },
 
     connect: function (dispatcherMode) {
-      var url = "http://" + this.host + ":" + this.port,
+      var url = "ws://" + this.host + ":" + this.port,
         self = this;
 
       this.connection = io(url, {
-        transports: ["websocket", "polling"],
+        transports: ["websocket"],
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        timeout: 20000,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 2000,
+        timeout: 5000,
         forceNew: true,
       });
 

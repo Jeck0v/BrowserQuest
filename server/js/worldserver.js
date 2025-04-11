@@ -494,10 +494,16 @@ module.exports = World = cls.Class.extend({
 
   handleMobHate: function (mobId, playerId, hatePoints) {
     var mob = this.getEntityById(mobId),
-      player = this.getEntityById(playerId),
-      mostHated;
+      player = this.getEntityById(playerId);
 
     if (player && mob) {
+      // Vérifier si les points de haine sont anormalement élevés
+      if (hatePoints > 100) {
+        this.firewall.logSuspiciousActivity(
+          player.connection._connection.remoteAddress,
+          "Suspicious hate points amount"
+        );
+      }
       mob.increaseHateFor(playerId, hatePoints);
       player.addHater(mob);
 

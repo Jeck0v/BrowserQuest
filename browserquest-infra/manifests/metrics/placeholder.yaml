@@ -1,0 +1,8 @@
+# placeholder pour que kubectl ne plante pas
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dummy-metrics
+  namespace: browserquest
+data:
+  dummy: "true"

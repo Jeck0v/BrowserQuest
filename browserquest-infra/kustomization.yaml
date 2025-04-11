@@ -1,0 +1,4 @@
+resources:
+  - manifests/base
+  - manifests/ingress
+  - manifests/metrics

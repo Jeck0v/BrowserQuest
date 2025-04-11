@@ -37,6 +37,11 @@ module.exports = Player = Character.extend({
         return;
       }
 
+      if (!self.validateInput(message, action)) {
+        self.connection.close("Invalid input data");
+        return;
+      }
+
       if (!self.hasEnteredGame && action !== Types.Messages.HELLO) {
         // HELLO must be the first message
         self.connection.close("Invalid handshake message: " + message);
@@ -385,12 +390,47 @@ module.exports = Player = Character.extend({
     clearTimeout(this.disconnectTimeout);
     this.disconnectTimeout = setTimeout(
       this.timeout.bind(this),
-      1000 * 60 * 15
-    ); // 15 min.
+      1000 * 60 * 10
+    );
   },
 
   timeout: function () {
     this.connection.sendUTF8("timeout");
     this.connection.close("Player was idle for too long");
+  },
+
+  validateInput: function (message, type) {
+    if (type === Types.Messages.MOVE || type === Types.Messages.TELEPORT) {
+      const x = message[1];
+      const y = message[2];
+
+      if (
+        typeof x !== "number" ||
+        typeof y !== "number" ||
+        x < 0 ||
+        x > 1000 ||
+        y < 0 ||
+        y > 1000
+      ) {
+        this.world.firewall.logSuspiciousActivity(
+          this.connection._connection.remoteAddress,
+          `Invalid position: ${x},${y}`
+        );
+        return false;
+      }
+    }
+
+    if (type === Types.Messages.CHAT) {
+      const chatMessage = message[1];
+      if (typeof chatMessage !== "string" || chatMessage.length > 60) {
+        this.world.firewall.logSuspiciousActivity(
+          this.connection._connection.remoteAddress,
+          "Chat message too long"
+        );
+        return false;
+      }
+    }
+
+    return true;
   },
 });
