@@ -15,11 +15,11 @@ spec:
     spec:
       containers:
         - name: browserquest
-          image: jeck0v/browserquest:lastest
+          image: jeck0v/browserquest:test
           ports:
             - containerPort: 80
               name: http
-            - containerPort: 8080
+            - containerPort: 8000
               name: websocket
           resources:
             requests:

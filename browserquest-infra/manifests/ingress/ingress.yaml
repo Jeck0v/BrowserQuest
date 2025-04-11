@@ -6,11 +6,12 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/websocket-services: "browserquest"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
   ingressClassName: nginx
   rules:
-    - host: localhost
+    - host: browserquest
       http:
         paths:
           - path: /
@@ -20,8 +21,8 @@ spec:
                 name: browserquest
                 port:
                   number: 80
-          - path: /ws
-            pathType: Prefix
+          - path: /socket.io
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: browserquest
