@@ -1,19 +1,16 @@
-### Documentation Lancement de l'app via le dockerfile
+### Start app with only the dockerfile:
 ```shell
 docker build -t browserquest .
 docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
-Dans notre cas on utilisera notre image dockerhub:
+For pull :
 
-`jeck0v/browserquest:test`
+`
+docker pull maxbdk/browserquest:test
+`
+### Minikube launch documentation:
 
-### Documentation lancement Minikube 
-
-#### Installer Minikube et Kubectl sur windows:
-On utilise Chocolatery, donc si pas installer => dans powershell admin
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-```
+#### Install Minikube and Kubectl on Windows:
 Minikube:
 ```bash
 choco install minikube
@@ -22,70 +19,39 @@ Kubectl:
 ```bash
 choco install kubernetes-cli
 ```
-#### Lancement Minikube:
-```bash
-minikube start --driver=docker --network-plugin=cni --cni=bridge
+#### On MacOS:
 ```
-Si besoin de suppr le cluster:
+brew install minikube
+```
+
+#### Start Minikube:
+if you already have a minikube cluster: 
 ```bash
 minikube delete
 ```
-Activer l'ingress de minikube
+
+```bash
+minikube start --driver=docker --network-plugin=cni --cni=bridge
+```
+Activating minikube ingress
 ```bash
 minikube addons enable ingress
 ```
-Activer les metrics-server pour le scalling du cluster
+Activating metrics-server
 ```bash
 minikube addons enable metrics-server
 ```
-Pour être sûr que l'image est bien prise en compte par minikube:
-```bash
-docker build -t jeck0v/browserquest .
-minikube image load jeck0v/browserquest:test
+And then:
+``` bash
+cd browserquest-infra
 ```
-Aller dans le dossier browserquest-infra:
-ça lancera tout
+you can:
 ```bash
-.\scripts\start-minikube.bat
-.\scripts\deploy.bat
-.\scripts\status.bat
-.\scripts\test-access.bat
+kubectl apply -k .
 ```
 
-
-### Tester l'app:
-Dans un autre terminal qu'il faudra laisser ouvert:
+### Test the app:
 
 ```bash
-kubectl port-forward -n browserquest svc/browserquest 8080:80
+kubectl port-forward -n browserquest svc/browserquest 8080:8080 8000:8000
 ```
-## Config nginx, configmap et ingress
-
-- un reverse proxy avec **nginx** pour gérer les requêtes HTTP et WebSocket
-- un **configmap** pour gérer la config de Nginx
-- un **ingress** pour exposer l'app (+ ingress-controller) <br>
-Cette partie n'est pas à 100% opérationel, je n'ai pas beaucoup d'xp en K8S donc je pense pas avoir fini ça d'ici le temps imparti
-
-## Infra Kubernetes
-
-- **deployement** : Pour déployer les pods de l'application et de Nginx
-- **services** : Pour exposer les pods et permettre la communication entre eux
-- **configmap** : Pour fournir des configurations personnalisées à Nginx
-- **ingress** : Pour gérer l'accès externe à l'app
-
-### Ce que j'aurais aimé faire de plus
-Je n’ai pas énormément d'expérience avec K8S, et c'étais assez complexe pour moi. Cela dit, je me suis beaucoup amusé à apprendre et à tester. Même si le résultat n'est pas incroyable, j'ai tenté de comprendre au mieux chaque éléments, et j’ai pas mal appris.
-
-J’aurais bien aimé :
-
-- Finaliser proprement la partie Ingress + Ingress Controller
-
-- Approfondir Kubernetes Security
-
-- Mettre en place AWS EKS, avec ELB, et potentiellement un déploiement complet en cloud
-
- Mais avec le temps imparti, ce n'était pas réaliste ahahha :)
-
-
-
-
