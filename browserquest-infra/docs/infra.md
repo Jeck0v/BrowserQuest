@@ -5,7 +5,7 @@ docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
 Dans notre cas on utilisera notre image dockerhub:
 
-`jeck0v/browserquest:lastest`
+`jeck0v/browserquest:test`
 
 ### Documentation lancement Minikube 
 
@@ -24,7 +24,7 @@ choco install kubernetes-cli
 ```
 #### Lancement Minikube:
 ```bash
-minikube start --driver=docker --kubernetes-version=v1.32.0
+minikube start --driver=docker --network-plugin=cni --cni=bridge
 ```
 Si besoin de suppr le cluster:
 ```bash
@@ -41,35 +41,23 @@ minikube addons enable metrics-server
 Pour être sûr que l'image est bien prise en compte par minikube:
 ```bash
 docker build -t jeck0v/browserquest .
-minikube image load jeck0v/browserquest:lastest
+minikube image load jeck0v/browserquest:test
 ```
-Aller dans le dossier racine:
+Aller dans le dossier browserquest-infra:
+ça lancera tout
 ```bash
-kubectl apply -f infra/deployement/
-kubectl apply -f infra/services/
-kubectl apply -f infra/configmap/
-kubectl apply -f infra/ingress/
-kubectl apply -f infra/scalling
+.\scripts\start-minikube.bat
+.\scripts\deploy.bat
+.\scripts\status.bat
+.\scripts\test-access.bat
 ```
-### Vérrification des pods / services / ingress / hpa:
 
-```bash
-kubectl get pods
-kubectl get hpa
-kubectl get services
-kubectl get ingress
-```
 
 ### Tester l'app:
-Dans un autre terminal qu'il faudra laisser ouvert: 
-via le tunnel aller à `localhost:8080`
+Dans un autre terminal qu'il faudra laisser ouvert:
+
 ```bash
-minikube tunnel
-```
-ou
-<br>
-```bash
-kubectl port-forward svc/browserquest-service 8080:80
+kubectl port-forward -n browserquest svc/browserquest 8080:80
 ```
 ## Config nginx, configmap et ingress
 

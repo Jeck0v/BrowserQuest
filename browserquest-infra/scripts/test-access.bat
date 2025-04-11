@@ -9,5 +9,4 @@ IF %ERRORLEVEL% EQU 0 (
     echo [OK] Application accessible sur http://localhost:8080
 ) ELSE (
     echo [ERREUR] L'application ne repond pas sur http://localhost:8080
-    echo Verifie si le tunnel Minikube est bien lance (minikube tunnel)
 )
