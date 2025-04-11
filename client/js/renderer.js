@@ -8,16 +8,10 @@ define(["camera", "item", "character", "player", "timer"], function (
   var Renderer = Class.extend({
     init: function (game, canvas, background, foreground) {
       this.game = game;
-      this.context =
-        canvas && canvas.getContext ? canvas.getContext("2d") : null;
-      this.background =
-        background && background.getContext
-          ? background.getContext("2d")
-          : null;
-      this.foreground =
-        foreground && foreground.getContext
-          ? foreground.getContext("2d")
-          : null;
+      this.context = canvas.getContext("2d");
+      this.background = background.getContext("2d");
+      this.foreground = foreground.getContext("2d");
+
 
       this.canvas = canvas;
       this.backcanvas = background;
@@ -77,14 +71,14 @@ define(["camera", "item", "character", "player", "timer"], function (
       return scale;
     },
 
-    rescale: function (factor) {
+    rescale: function () {
       this.scale = this.getScaleFactor();
 
       this.createCamera();
 
-      this.context.mozImageSmoothingEnabled = false;
-      this.background.mozImageSmoothingEnabled = false;
-      this.foreground.mozImageSmoothingEnabled = false;
+      this.setSmoothing(this.context, false);
+      this.setSmoothing(this.background, false);
+      this.setSmoothing(this.foreground, false);
 
       this.initFont();
       this.initFPS();
@@ -97,18 +91,28 @@ define(["camera", "item", "character", "player", "timer"], function (
       }
     },
 
+    setSmoothing: function (ctx, enabled) {
+      if (!ctx) return;
+      ctx.mozImageSmoothingEnabled = enabled;
+      ctx.imageSmoothingEnabled = enabled;
+    },    
+
     createCamera: function () {
       this.camera = new Camera(this);
       this.camera.rescale();
 
-      this.canvas.width = this.camera.gridW * this.tilesize * this.scale;
-      this.canvas.height = this.camera.gridH * this.tilesize * this.scale;
+
+      const width = this.camera.gridW * this.tilesize * this.scale
+      const height = this.camera.gridH * this.tilesize * this.scale
+
+      this.canvas.width = width;
+      this.canvas.height = height;
       console.debug(
         "#entities set to " + this.canvas.width + " x " + this.canvas.height
       );
 
-      this.backcanvas.width = this.canvas.width;
-      this.backcanvas.height = this.canvas.height;
+      this.backcanvas.width = width;
+      this.backcanvas.height = height;
       console.debug(
         "#background set to " +
           this.backcanvas.width +
@@ -116,8 +120,8 @@ define(["camera", "item", "character", "player", "timer"], function (
           this.backcanvas.height
       );
 
-      this.forecanvas.width = this.canvas.width;
-      this.forecanvas.height = this.canvas.height;
+      this.forecanvas.width = width;
+      this.forecanvas.height = height;
       console.debug(
         "#foreground set to " +
           this.forecanvas.width +
@@ -147,10 +151,10 @@ define(["camera", "item", "character", "player", "timer"], function (
     },
 
     setFontSize: function (size) {
-      var font = size + "px GraphicPixel";
+      var font = `${size}px GraphicPixel`;
 
-      this.context.font = font;
-      this.background.font = font;
+      if (this.context) this.context.font = font;
+      if (this.background) this.background.font = font;
     },
 
     drawText: function (text, x, y, centered, color, strokeColor) {
@@ -848,8 +852,6 @@ define(["camera", "item", "character", "player", "timer"], function (
         this.drawHighTiles(this.foreground);
         this.foreground.restore();
       }
-
-      console.log("Static canvases (terrain, background) have been rendered");
     },
 
     renderFrame: function () {

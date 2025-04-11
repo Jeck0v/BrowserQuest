@@ -101,7 +101,6 @@ define(["area"], function (Area) {
         "canplaythrough",
         function (e) {
           this.removeEventListener("canplaythrough", arguments.callee, false);
-          console.debug(path + " is ready to play.");
           if (loaded_callback) {
             loaded_callback();
           }

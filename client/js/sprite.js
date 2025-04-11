@@ -87,7 +87,7 @@ define(["jquery", "animation", "sprites"], function ($, Animation, sprites) {
           height: this.height,
         };
       } catch (e) {
-        console.error("Error getting image data for sprite : " + this.name);
+        // Add error logs not using console.log (later)
       }
     },
 

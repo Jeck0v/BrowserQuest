@@ -69,8 +69,6 @@ define(["player", "entityfactory"], function (Player, EntityFactory) {
         this.connection.emit("dispatch", true);
 
         this.connection.on("dispatched", function (reply) {
-          console.log("Dispatched: ");
-          console.log(reply);
           if (reply.status === "OK") {
             self.dispatched_callback(reply.host, reply.port);
           } else if (reply.status === "FULL") {
@@ -128,7 +126,6 @@ define(["player", "entityfactory"], function (Player, EntityFactory) {
 
     receiveMessage: function (message) {
       if (this.isListening) {
-        console.debug("data: " + message);
 
         if (message instanceof Array) {
           if (message[0] instanceof Array) {

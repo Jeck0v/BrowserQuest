@@ -154,8 +154,6 @@ module.exports = World = cls.Class.extend({
   run: function (mapFilePath) {
     var self = this;
 
-    console.log("Map filepath:", mapFilePath);
-
     this.map = new TheMap(mapFilePath);
 
     this.map.ready(function () {
@@ -377,9 +375,6 @@ module.exports = World = cls.Class.extend({
 
     entity.destroy();
     this.removeFromGroups(entity);
-    console.debug(
-      "Removed " + Types.getKindAsString(entity.kind) + " : " + entity.id
-    );
   },
 
   addPlayer: function (player) {

@@ -1193,12 +1193,10 @@ define([
         });
 
         self.player.onDeath(function () {
-          console.info(self.playerId + " is dead");
 
           self.player.stopBlinking();
           self.player.setSprite(self.sprites["death"]);
           self.player.animate("death", 120, 1, function () {
-            console.info(self.playerId + " was removed");
 
             self.removeEntity(self.player);
             self.removeFromRenderingGrid(
@@ -1249,21 +1247,20 @@ define([
         });
 
         self.client.onSpawnItem(function (item, x, y) {
-          console.info(
-            "Spawned " +
-              Types.getKindAsString(item.kind) +
-              " (" +
-              item.id +
-              ") at " +
-              x +
-              ", " +
-              y
-          );
+          // console.info(
+          //   "Spawned " +
+          //     Types.getKindAsString(item.kind) +
+          //     " (" +
+          //     item.id +
+          //     ") at " +
+          //     x +  
+          //     ", " +
+          //     y
+          // );
           self.addItem(item, x, y);
         });
 
         self.client.onSpawnChest(function (chest, x, y) {
-          console.info("Spawned chest (" + chest.id + ") at " + x + ", " + y);
           chest.setSprite(self.sprites[chest.getSpriteName()]);
           chest.setGridPosition(x, y);
           chest.setAnimation("idle_down", 150);
@@ -1273,7 +1270,6 @@ define([
             chest.stopBlinking();
             chest.setSprite(self.sprites["death"]);
             chest.setAnimation("death", 120, 1, function () {
-              console.info(chest.id + " was removed");
               self.removeEntity(chest);
               self.removeFromRenderingGrid(chest, chest.gridX, chest.gridY);
               self.previousClickPosition = {};
@@ -1298,16 +1294,16 @@ define([
 
                 self.addEntity(entity);
 
-                console.debug(
-                  "Spawned " +
-                    Types.getKindAsString(entity.kind) +
-                    " (" +
-                    entity.id +
-                    ") at " +
-                    entity.gridX +
-                    ", " +
-                    entity.gridY
-                );
+                // console.debug(
+                //   "Spawned " +
+                //     Types.getKindAsString(entity.kind) +
+                //     " (" +
+                //     entity.id +
+                //     ") at " +
+                //     entity.gridX +
+                //     ", " +
+                //     entity.gridY
+                // );
 
                 if (entity instanceof Character) {
                   entity.onBeforeStep(function () {
@@ -1384,7 +1380,7 @@ define([
                   });
 
                   entity.onDeath(function () {
-                    console.info(entity.id + " is dead");
+                    // console.info(entity.id + " is dead");
 
                     if (entity instanceof Mob) {
                       // Keep track of where mobs die in order to spawn their dropped items
@@ -1400,7 +1396,6 @@ define([
                       self.sprites[entity instanceof Mobs.Rat ? "rat" : "death"]
                     );
                     entity.animate("death", 120, 1, function () {
-                      console.info(entity.id + " was removed");
 
                       self.removeEntity(entity);
                       self.removeFromRenderingGrid(
@@ -1468,13 +1463,6 @@ define([
           var entity = self.getEntityById(entityId);
 
           if (entity) {
-            console.info(
-              "Despawning " +
-                Types.getKindAsString(entity.kind) +
-                " (" +
-                entity.id +
-                ")"
-            );
 
             if (
               entity.gridX === self.previousClickPosition.x &&
@@ -1533,7 +1521,6 @@ define([
             } else {
               self.removeEntity(entity);
             }
-            console.debug("Entity was destroyed: " + entity.id);
           }
         });
 
@@ -1555,7 +1542,6 @@ define([
             target = self.getEntityById(targetId);
 
           if (attacker && target && attacker.id !== self.playerId) {
-            console.debug(attacker.id + " attacks " + target.id);
 
             if (
               attacker &&
@@ -2679,17 +2665,6 @@ define([
             self.removeEntity(entity);
           }
         });
-        console.debug(
-          "Removed " +
-            nb +
-            " entities: " +
-            _.pluck(
-              _.reject(this.obsoleteEntities, function (id) {
-                return id === self.player.id;
-              }),
-              "id"
-            )
-        );
         this.obsoleteEntities = null;
       }
     },
