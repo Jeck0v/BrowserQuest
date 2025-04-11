@@ -132,7 +132,6 @@ define(["player", "entityfactory", "lib/bison"], function (
 
     receiveMessage: function (message) {
       if (this.isListening) {
-        console.debug("data: " + message);
 
         if (message instanceof Array) {
           if (message[0] instanceof Array) {

@@ -375,9 +375,6 @@ module.exports = World = cls.Class.extend({
 
     entity.destroy();
     this.removeFromGroups(entity);
-    console.debug(
-      "Removed " + Types.getKindAsString(entity.kind) + " : " + entity.id
-    );
   },
 
   addPlayer: function (player) {

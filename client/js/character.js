@@ -426,7 +426,8 @@ define(["entity", "transition", "timer"], function (Entity, Transition, Timer) {
       if (this.isAttackedBy(character)) {
         delete this.attackers[character.id];
       } else {
-        console.error(this.id + " is not attacked by " + character.id);
+        // See if user isnt attacking a dead entmy
+        // console.error(this.id + " is not attacked by " + character.id);
       }
     },
 
