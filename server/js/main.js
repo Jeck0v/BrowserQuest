@@ -1,5 +1,6 @@
 var fs = require("fs"),
-  Metrics = require("./metrics");
+  Metrics = require("./metrics"),
+  Firewall = require("./firewall");
 
 function main(config) {
   var ws = require("./ws"),
@@ -7,7 +8,13 @@ function main(config) {
     Log = require("log"),
     _ = require("underscore"),
     server = new ws.socketIOServer(config.host, config.port),
-    metrics = config.metrics_enabled ? new Metrics(config) : null;
+    metrics = config.metrics_enabled ? new Metrics(config) : null,
+    firewall = new Firewall();
+
+  setInterval(function () {
+    firewall.cleanupOldEntries();
+  }, 3600000);
+
   (worlds = []),
     (lastTotalPlayers = 0),
     (checkPopulationInterval = setInterval(function () {
@@ -38,10 +45,15 @@ function main(config) {
   console.info("Starting BrowserQuest game server...");
 
   server.onConnect(function (connection) {
-    var world, // the one in which the player will be spawned
+    if (!firewall.checkIP(connection._connection.remoteAddress)) {
+      connection.close("IP is blacklisted");
+      return;
+    }
+
+    var world,
       connect = function () {
         if (world) {
-          world.connect_callback(new Player(connection, world));
+          world.connect_callback(new Player(connection, world, firewall));
         }
       };
 
@@ -97,7 +109,7 @@ function main(config) {
 
   if (config.metrics_enabled) {
     metrics.ready(function () {
-      onPopulationChange(); // initialize all counters to 0 when the server starts
+      onPopulationChange();
     });
   }
 

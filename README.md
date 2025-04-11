@@ -1,10 +1,6 @@
 # BrowserQuest Rework 2025 [updated & with Socket.IO V2]
 
-[![Node.js CI](https://github.com/nenuadrian/BrowserQuest/actions/workflows/node.js.yml/badge.svg)](https://github.com/nenuadrian/BrowserQuest/actions/workflows/node.js.yml)
-
-![alt tag](https://raw.github.com/nenuadrian/BrowserQuest/master/screens/1.png)
-
-## Teams:
+## Teams
 
 Maxime Bidan - Louis Dondey - Arnaud Fischer - Alexis Gontier
 
@@ -12,6 +8,10 @@ Maxime Bidan - Louis Dondey - Arnaud Fischer - Alexis Gontier
 
 - Updated backend and frontend to use latest Socket.io and NodeJS version
 - Fixed bugs and error.
+- Updated client and server configuration files to use dynamic hostnames.
+- Modified the client's config.js to properly parse and use the dynamic hostname.
+- Make a dockerfile for running the game everywhere.
+- Improved security with a firewall that blacklist ip base on identified bad behavior, limitation of the number of possible connexion try by IP, validation of player entry.
 
 ## HOW TO RUN?
 
@@ -21,16 +21,6 @@ setup config json file in client/config and server/config (cf documentation)
 docker build -t browserquest .
 docker run -p 8080:8080 -p 8000:8000 browserquest
 ```
-
-Then go inside the Client folder and open index.html.
-
-You might want to host a webserver and open index.html in that (e.g. 127.0.0.1/index.html).
-
-Also read the original README files you'll find inside the Client and Server folders to learn the basics of configuring (it's preconfigured right now).
-
-## Original README
-
-BrowserQuest is a HTML5/JavaScript multiplayer game experiment.
 
 ## Documentation
 
