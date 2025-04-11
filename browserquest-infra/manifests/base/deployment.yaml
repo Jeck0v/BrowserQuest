@@ -4,7 +4,7 @@ metadata:
   name: browserquest
   namespace: browserquest
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: browserquest
@@ -23,6 +23,6 @@ spec:
               name: websocket
           resources:
             requests:
-              cpu: 100m
+              cpu: 500m
             limits:
-              cpu: 200m
+              cpu: 1000m
