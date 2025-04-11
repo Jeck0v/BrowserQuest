@@ -8,9 +8,10 @@ define(["camera", "item", "character", "player", "timer"], function (
   var Renderer = Class.extend({
     init: function (game, canvas, background, foreground) {
       this.game = game;
-      this.context = this.getContext(canvas);
-      this.background = this.getContext(background);
-      this.foreground = this.getContext(foreground);
+      this.context = canvas.getContext("2d");
+      this.background = background.getContext("2d");
+      this.foreground = foreground.getContext("2d");
+
 
       this.canvas = canvas;
       this.backcanvas = background;
